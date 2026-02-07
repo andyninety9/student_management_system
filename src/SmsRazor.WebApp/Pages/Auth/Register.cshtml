@@ -1,0 +1,85 @@
+@page
+@model SmsRazor.WebApp.Pages.Auth.RegisterModel
+@{
+    ViewData["Title"] = "Register";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Student Management System</title>
+    <link rel="stylesheet" href="~/css/auth/common.css" />
+    <link rel="stylesheet" href="~/css/auth/register.css" />
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-logo">SMS</div>
+                <h1 class="auth-title">Create Account</h1>
+                <p class="auth-subtitle">Join us to manage your academic journey</p>
+            </div>
+
+            <form method="post" class="auth-form">
+                <div class="form-group">
+                    <label asp-for="Input.FullName" class="form-label">Full Name</label>
+                    <input asp-for="Input.FullName" 
+                           type="text" 
+                           class="form-input" 
+                           placeholder="John Doe"
+                           required />
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Input.Email" class="form-label">Email Address</label>
+                    <input asp-for="Input.Email" 
+                           type="email" 
+                           class="form-input" 
+                           placeholder="you@example.com"
+                           required />
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Input.Password" class="form-label">Password</label>
+                    <input asp-for="Input.Password" 
+                           type="password" 
+                           class="form-input" 
+                           placeholder="Create a strong password"
+                           minlength="8"
+                           required />
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Input.ConfirmPassword" class="form-label">Confirm Password</label>
+                    <input asp-for="Input.ConfirmPassword" 
+                           type="password" 
+                           class="form-input" 
+                           placeholder="Re-enter your password"
+                           minlength="8"
+                           required />
+                </div>
+
+                <div class="form-checkbox-group">
+                    <input asp-for="Input.AgreeToTerms" 
+                           type="checkbox" 
+                           class="form-checkbox" 
+                           id="agreeToTerms"
+                           required />
+                    <label for="agreeToTerms" class="form-checkbox-label">
+                        I agree to the <a href="#" class="link">Terms of Service</a> and <a href="#" class="link">Privacy Policy</a>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Create Account</button>
+            </form>
+
+            <div class="auth-footer">
+                Already have an account? <a asp-page="/Auth/Login" class="link">Sign in</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

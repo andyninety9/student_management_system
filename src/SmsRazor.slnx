@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="SmsRazor.BLL/SmsRazor.BLL.csproj" />
+  <Project Path="SmsRazor.DAL/SmsRazor.DAL.csproj" />
+  <Project Path="SmsRazor.WebApp/SmsRazor.WebApp.csproj" />
+</Solution>
