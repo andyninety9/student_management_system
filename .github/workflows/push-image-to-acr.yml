@@ -1,0 +1,51 @@
+name: Build & Push API image to ACR
+
+on:
+  push:
+    branches: ["develop"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: acr-push-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE_REPO: sms-webapp
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Push image using ACR Admin User
+      - name: Docker login to ACR (admin user)
+        run: |
+          set -e
+          echo "${{ secrets.ACR_PASSWORD }}" | docker login "${{ secrets.ACR_LOGIN_SERVER }}" \
+            -u "${{ secrets.ACR_USERNAME }}" --password-stdin
+
+      - name: Build & Push image
+        # Run in root directory because Dockerfile expects context at root
+        run: |
+          set -e
+          TAG="${GITHUB_SHA}"
+          IMAGE="${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_REPO }}:${TAG}"
+          IMAGE_LATEST="${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_REPO }}:latest"
+
+          docker build -t "${IMAGE}" -t "${IMAGE_LATEST}" .
+          docker push "${IMAGE}"
+          docker push "${IMAGE_LATEST}"
+
+          echo "IMAGE=${IMAGE}" >> $GITHUB_ENV
+          echo "IMAGE_LATEST=${IMAGE_LATEST}" >> $GITHUB_ENV
+
+      - name: Print image reference
+        run: |
+          echo "Pushed images:"
+          echo "  - ${IMAGE}"
+          echo "  - ${IMAGE_LATEST}"
