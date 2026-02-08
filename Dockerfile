@@ -1,21 +1,25 @@
 # Use official .NET SDK image for build
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
-WORKDIR /src
+WORKDIR /app
 
 # Copy solution file and project files first (for better caching)
-COPY ["student_management_system.sln", "."]
+# Note: Source paths are relative to the build context (root of repo)
+COPY ["src/SmsRazor.slnx", "src/"]
 COPY ["src/SmsRazor.DAL/SmsRazor.DAL.csproj", "src/SmsRazor.DAL/"]
 COPY ["src/SmsRazor.BLL/SmsRazor.BLL.csproj", "src/SmsRazor.BLL/"]
 COPY ["src/SmsRazor.WebApp/SmsRazor.WebApp.csproj", "src/SmsRazor.WebApp/"]
 
 # Restore dependencies
+# We need to be in the directory containing the solution file
+WORKDIR /app/src
 RUN dotnet restore
 
 # Copy the rest of the source code
+WORKDIR /app
 COPY . .
 
 # Build and publish the WebApp
-WORKDIR "/src/src/SmsRazor.WebApp"
+WORKDIR /app/src/SmsRazor.WebApp
 RUN dotnet publish "SmsRazor.WebApp.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 # Use official ASP.NET Core runtime image for the final stage
