@@ -1,0 +1,57 @@
+@page
+@model SmsRazor.WebApp.Pages.Admin.Syllabus.IndexModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Manage Syllabus";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin/admin-syllabus.css" asp-append-version="true" />
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-4">
+    <div>
+        <h2 class="mb-1 fw-bold tracking-tight text-dark">Syllabus Management</h2>
+        <p class="text-muted mb-0">View and organize all course curriculums.</p>
+    </div>
+    <button class="btn btn-dark px-4 py-2 fw-semibold rounded-3">
+        <i class="fa-solid fa-plus me-2"></i> Create New
+    </button>
+</div>
+
+<div class="card border-0 shadow-none bg-white rounded-3 border">
+    <div class="card-body p-0">
+        <div class="list-group list-group-flush syllabus-list rounded-3">
+            <div class="list-group-item p-4 d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-1 text-dark fw-bold">Introduction to Computer Science</h5>
+                    <p class="mb-0 text-muted small">Code: CS101 &bull; 4 Credits &bull; Updated: Oct 12, 2025</p>
+                </div>
+                <div>
+                    <button class="btn btn-sm btn-outline-dark px-3 me-2 rounded-pill">Edit</button>
+                    <button class="btn btn-sm btn-outline-danger px-3 rounded-pill">Delete</button>
+                </div>
+            </div>
+            <div class="list-group-item p-4 d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-1 text-dark fw-bold">Advanced Mathematics</h5>
+                    <p class="mb-0 text-muted small">Code: MATH301 &bull; 3 Credits &bull; Updated: Sep 05, 2025</p>
+                </div>
+                <div>
+                    <button class="btn btn-sm btn-outline-dark px-3 me-2 rounded-pill">Edit</button>
+                    <button class="btn btn-sm btn-outline-danger px-3 rounded-pill">Delete</button>
+                </div>
+            </div>
+            <div class="list-group-item p-4 d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-1 text-dark fw-bold">Data Structures & Algorithms</h5>
+                    <p class="mb-0 text-muted small">Code: CS201 &bull; 4 Credits &bull; Updated: Nov 20, 2025</p>
+                </div>
+                <div>
+                    <button class="btn btn-sm btn-outline-dark px-3 me-2 rounded-pill">Edit</button>
+                    <button class="btn btn-sm btn-outline-danger px-3 rounded-pill">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,133 @@
+@page
+@model SmsRazor.WebApp.Pages.Admin.IndexModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Dashboard Overview";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin/admin-index.css" asp-append-version="true" />
+}
+
+<div class="row mb-5 align-items-end">
+    <div class="col-md-6">
+        <h2 class="mb-1 fw-bold tracking-tight text-dark">Dashboard Overview</h2>
+        <p class="text-muted mb-0">Welcome back to the System Management System.</p>
+    </div>
+</div>
+
+<div class="row mb-5">
+    <!-- Quick Stats Cards -->
+    <div class="col-md-3 mb-4">
+        <div class="card stat-card h-100 bg-white shadow-none position-relative">
+            <div class="card-body p-4">
+                <i class="fa-solid fa-user-graduate stat-icon"></i>
+                <h6 class="text-muted text-uppercase fw-semibold mb-3 small">Total Students</h6>
+                <h2 class="mb-0 fw-bold text-dark">1,250</h2>
+            </div>
+            <div class="card-footer bg-white border-top-0 pt-0 pb-4 px-4 text-muted small">
+                <span class="text-dark fw-bold">↑ 5%</span> this month
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card stat-card h-100 bg-white shadow-none position-relative">
+            <div class="card-body p-4">
+                <i class="fa-solid fa-chalkboard-user stat-icon"></i>
+                <h6 class="text-muted text-uppercase fw-semibold mb-3 small">Active Teachers</h6>
+                <h2 class="mb-0 fw-bold text-dark">85</h2>
+            </div>
+            <div class="card-footer bg-white border-top-0 pt-0 pb-4 px-4 text-muted small">
+                Stable
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card stat-card h-100 bg-white shadow-none position-relative">
+            <div class="card-body p-4">
+                <i class="fa-solid fa-building stat-icon"></i>
+                <h6 class="text-muted text-uppercase fw-semibold mb-3 small">Departments</h6>
+                <h2 class="mb-0 fw-bold text-dark">12</h2>
+            </div>
+            <div class="card-footer bg-white border-top-0 pt-0 pb-4 px-4 text-muted small">
+                <a href="#" class="text-dark text-decoration-none border-bottom border-dark pb-1">View details</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card stat-card h-100 bg-white shadow-none position-relative">
+            <div class="card-body p-4">
+                <i class="fa-solid fa-users-gear stat-icon"></i>
+                <h6 class="text-muted text-uppercase fw-semibold mb-3 small">System Users</h6>
+                <h2 class="mb-0 fw-bold text-dark">1,400</h2>
+            </div>
+            <div class="card-footer bg-white border-top-0 pt-0 pb-4 px-4 text-muted small">
+                Including admins
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mb-4">
+        <div class="card border-0 shadow-none h-100">
+            <div class="card-header bg-white border-bottom-0 pb-0">
+                <h5 class="card-title fw-bold text-dark mb-0">Recent Activities</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table minimal-table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Action</th>
+                                <th>User</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>New Student Registered</td>
+                                <td><span class="text-muted">system.admin</span></td>
+                                <td>Today, 10:23 AM</td>
+                                <td><span class="badge bg-dark text-white fw-normal rounded-pill px-3 py-2">Success</span></td>
+                            </tr>
+                            <tr>
+                                <td>Updated Syllabus</td>
+                                <td><span class="text-muted">it.dept</span></td>
+                                <td>Yesterday, 14:00 PM</td>
+                                <td><span class="badge bg-dark text-white fw-normal rounded-pill px-3 py-2">Success</span></td>
+                            </tr>
+                            <tr>
+                                <td>Failed Login Attempt</td>
+                                <td><span class="text-muted">unknown</span></td>
+                                <td>Yesterday, 09:15 AM</td>
+                                <td><span class="badge border border-dark text-dark fw-normal rounded-pill px-3 py-2">Failed</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card border-0 shadow-none h-100">
+            <div class="card-header bg-white border-bottom-0 pb-0">
+                <h5 class="card-title fw-bold text-dark mb-3">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-3">
+                    <a href="#" class="btn btn-dark text-start py-3 px-4 rounded-3 d-flex align-items-center">
+                        <i class="fa-solid fa-plus me-3 opacity-75"></i> <span class="fw-semibold">Add New User</span>
+                    </a>
+                    <a href="#" class="btn btn-outline-dark text-start py-3 px-4 rounded-3 d-flex align-items-center">
+                        <i class="fa-solid fa-calendar-days me-3 opacity-75"></i> <span class="fw-semibold">Manage Intakes</span>
+                    </a>
+                    <a href="#" class="btn btn-outline-dark text-start py-3 px-4 rounded-3 d-flex align-items-center">
+                        <i class="fa-solid fa-gear me-3 opacity-75"></i> <span class="fw-semibold">System Settings</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

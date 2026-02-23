@@ -74,7 +74,7 @@ public class JwtCookieMiddleware
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_configuration["JWT_SECRET"]!);
             
-            tokenHandler.ValidateToken(token, new TokenValidationParameters
+            var principal = tokenHandler.ValidateToken(token, new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(key),
@@ -84,13 +84,12 @@ public class JwtCookieMiddleware
                 ClockSkew = TimeSpan.Zero
             }, out SecurityToken validatedToken);
 
-            var jwtToken = (JwtSecurityToken)validatedToken;
-            
-            // Extract claims
-            var claims = jwtToken.Claims.ToList();
+            // Extract mapped claims from the principal (this preserves ClaimTypes like ClaimTypes.Role)
+            var claims = principal.Claims.ToList();
 
-            // Create identity and principle
-            var identity = new ClaimsIdentity(claims, "JwtCookie");
+            // Create identity and principal, explicitly stating the Name and Role claim types 
+            // so [Authorize(Roles = "...")] works perfectly.
+            var identity = new ClaimsIdentity(claims, "JwtCookie", ClaimTypes.Name, ClaimTypes.Role);
             context.User = new ClaimsPrincipal(identity);
 
             return true;

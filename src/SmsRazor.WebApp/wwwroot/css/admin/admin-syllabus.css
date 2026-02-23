@@ -1,0 +1,20 @@
+/* admin-syllabus.css - Minimalist */
+.syllabus-list .list-group-item {
+    border: none;
+    border-bottom: 1px solid #eaeaea;
+    border-left: 4px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.syllabus-list .list-group-item:last-child {
+    border-bottom: none;
+}
+
+.syllabus-list .list-group-item:hover {
+    border-left-color: #111;
+    background-color: #fafafa;
+}
+
+.syllabus-list .list-group-item:hover .text-muted {
+    color: #555 !important;
+}

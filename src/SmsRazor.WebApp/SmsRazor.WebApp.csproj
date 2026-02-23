@@ -2,7 +2,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SmsRazor.BLL\SmsRazor.BLL.csproj" />
-    <ProjectReference Include="..\SmsRazor.DAL\SmsRazor.DAL.csproj" />
   </ItemGroup>
 
   <ItemGroup>

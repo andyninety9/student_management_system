@@ -1,0 +1,122 @@
+/* admin-sidebar.css - Minimalist Black & White */
+.admin-sidebar {
+    width: 260px;
+    height: 100vh;
+    transition: width 0.3s ease;
+    flex-shrink: 0;
+    z-index: 100;
+}
+
+.sidebar-collapsed .admin-sidebar {
+    width: 0;
+    overflow: hidden;
+}
+
+.sidebar-header {
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #ffffff;
+    padding: 0 1.5rem;
+    transition: padding 0.3s ease;
+}
+
+.logo-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    text-decoration: none;
+}
+
+.sidebar-logo {
+    max-height: 45px;
+    max-width: 100%;
+    width: auto;
+    object-fit: contain;
+    transition: all 0.3s ease;
+}
+
+.logo-container:hover .sidebar-logo {
+    transform: scale(1.05);
+    opacity: 0.9;
+}
+
+.nav-link {
+    padding: 10px 16px;
+    border-radius: 8px;
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #4b5563 !important;
+    /* Muted dark */
+}
+
+.nav-link:hover {
+    background-color: #f3f4f6;
+    color: #111827 !important;
+}
+
+.nav-link.active {
+    background-color: #111827;
+    color: #ffffff !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.nav-link.active .nav-icon {
+    color: #ffffff;
+}
+
+.nav-icon {
+    margin-right: 14px;
+    font-size: 1.1rem;
+    width: 24px;
+    text-align: center;
+    color: inherit;
+    opacity: 0.8;
+}
+
+.nav-link:hover .nav-icon {
+    opacity: 1;
+}
+
+.tracking-tight {
+    letter-spacing: -0.05em;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .admin-sidebar {
+        position: absolute;
+        left: -260px;
+    }
+
+    .sidebar-collapsed .admin-sidebar {
+        width: 260px;
+        left: 0;
+    }
+
+    .sidebar-header {
+        height: 60px;
+        padding: 0 1rem;
+    }
+
+    .sidebar-logo {
+        max-height: 35px;
+    }
+}
+
+/* Ensure logo scales nicely when sidebar collapses on larger screens */
+@media (min-width: 769px) {
+    .sidebar-collapsed .sidebar-header {
+        padding: 0 0.5rem;
+    }
+
+    .sidebar-collapsed .sidebar-logo {
+        max-height: 30px;
+    }
+}

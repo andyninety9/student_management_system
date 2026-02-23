@@ -1,0 +1,67 @@
+@page
+@model SmsRazor.WebApp.Pages.AccessDeniedModel
+@{
+    ViewData["Title"] = "Access Denied";
+    Layout = null; // Use a blank layout for error pages
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>403 - Access Denied</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <style>
+        body {
+            background-color: #f8f9fa;
+            color: #212529;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .error-container {
+            text-align: center;
+            max-width: 500px;
+            padding: 2rem;
+        }
+        .error-icon {
+            font-size: 5rem;
+            color: #dc3545;
+            margin-bottom: 1.5rem;
+        }
+        .error-code {
+            font-size: 6rem;
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: -0.05em;
+            color: #343a40;
+            margin-bottom: 0.5rem;
+        }
+        .error-title {
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        .error-desc {
+            color: #6c757d;
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <i class="fa-solid fa-shield-halved error-icon"></i>
+        <div class="error-code">403</div>
+        <h2 class="error-title">Access Denied</h2>
+        <p class="error-desc">Oops! You don't have permission to access this page. Please check your credentials or contact your administrator.</p>
+        <a href="/" class="btn btn-dark px-4 py-2 fw-medium rounded-pill">
+            <i class="fa-solid fa-arrow-left me-2"></i> Return to Homepage
+        </a>
+    </div>
+</body>
+</html>

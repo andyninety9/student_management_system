@@ -47,10 +47,12 @@ body {
 }
 
 .auth-logo {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--primary-color);
-    margin-bottom: 0.5rem;
+    display: block;
+    margin: 0 auto 1.5rem auto;
+    max-width: 180px;
+    width: 100%;
+    height: auto;
+    object-fit: contain;
 }
 
 .auth-title {
@@ -209,6 +211,11 @@ body {
 
 /* Responsive Design */
 @media (max-width: 480px) {
+    .auth-logo {
+        max-width: 140px;
+        margin-bottom: 1rem;
+    }
+
     .auth-card {
         padding: 2rem 1.5rem;
     }
