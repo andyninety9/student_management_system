@@ -1,0 +1,56 @@
+@{
+    var currentPath = Context.Request.Path.Value ?? "";
+    // Note: If on /Admin, path is /Admin. If on /Admin/Index, path might be /Admin/Index.
+    bool IsActive(string path, bool exactMatch = false)
+    {
+        if (exactMatch)
+        {
+            return currentPath.Equals(path, StringComparison.OrdinalIgnoreCase) || 
+                   (path == "/Admin" && currentPath.Equals("/Admin/Index", StringComparison.OrdinalIgnoreCase));
+        }
+        return currentPath.StartsWith(path, StringComparison.OrdinalIgnoreCase);
+    }
+}
+
+<aside class="admin-sidebar bg-white border-end">
+    <div class="sidebar-header border-bottom">
+        <a href="/Admin" class="logo-container">
+           <img src="~/images/logo-FPT.jpg" alt="FPT Logo" class="sidebar-logo" />
+        </a>
+    </div>
+    <nav class="sidebar-nav p-3">
+        <div class="text-uppercase text-muted small fw-bold mb-3 px-3">Management</div>
+        <ul class="nav flex-column gap-2">
+            <li class="nav-item">
+                <a class="nav-link text-dark @(IsActive("/Admin", exactMatch: true) ? "active" : "")" href="/Admin">
+                    <i class="fa-solid fa-chart-simple nav-icon"></i>
+                    Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-dark @(IsActive("/Admin/Syllabus") ? "active" : "")" href="/Admin/Syllabus">
+                    <i class="fa-solid fa-book nav-icon"></i>
+                    Syllabus
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-dark @(IsActive("/Admin/Teachers") ? "active" : "")" href="/Admin/Teachers">
+                    <i class="fa-solid fa-chalkboard-user nav-icon"></i>
+                    Teachers
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-dark @(IsActive("/Admin/Students") ? "active" : "")" href="/Admin/Students">
+                    <i class="fa-solid fa-user-graduate nav-icon"></i>
+                    Students
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-dark @(IsActive("/Admin/Courses") ? "active" : "")" href="/Admin/Courses">
+                    <i class="fa-solid fa-layer-group nav-icon"></i>
+                    Courses
+                </a>
+            </li>
+        </ul>
+    </nav>
+</aside>

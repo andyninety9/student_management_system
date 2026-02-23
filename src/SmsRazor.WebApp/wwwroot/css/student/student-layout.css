@@ -1,0 +1,61 @@
+/* student-layout.css - Clean and focused style for students */
+body {
+    background-color: #f3f4f6;
+    /* Soft gray for a calm reading environment */
+    color: #111827;
+}
+
+.student-navbar {
+    background-color: #ffffff;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.student-brand {
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    color: #111827;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+}
+
+.student-nav-link {
+    color: #4b5563;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.student-nav-link:hover {
+    color: #111827;
+    background-color: #f3f4f6;
+}
+
+.student-nav-link.active {
+    color: #2563eb;
+    /* Primary blue for students */
+    background-color: #eff6ff;
+}
+
+.student-main {
+    min-height: calc(100vh - 64px);
+    /* assuming navbar is ~64px */
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+
+/* Common Card Style for Student Portal */
+.student-card {
+    background: #ffffff;
+    border-radius: 1rem;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.student-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+}

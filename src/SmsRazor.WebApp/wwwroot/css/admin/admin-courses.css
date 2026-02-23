@@ -1,0 +1,17 @@
+/* admin-courses.css - Minimalist */
+.course-card {
+    border: 1px solid #eaeaea;
+    transition: all 0.2s ease;
+}
+
+.course-card:hover {
+    border-color: #111;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.course-badge {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+}

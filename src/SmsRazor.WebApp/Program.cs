@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SmsRazor.BLL;
 
 // Load .env file if it exists (for runtime)
 if (File.Exists(".env"))
@@ -31,22 +32,10 @@ builder.Services.AddAuthentication("JwtCookie")
 // Build connection string from .env variables (if available), otherwise use appsettings.json
 var connectionString = Environment.GetEnvironmentVariable("DB_HOST") != null
     ? $"Host={Environment.GetEnvironmentVariable("DB_HOST")};Port={Environment.GetEnvironmentVariable("DB_PORT")};Database={Environment.GetEnvironmentVariable("DB_NAME")};Username={Environment.GetEnvironmentVariable("DB_USER")};Password={Environment.GetEnvironmentVariable("DB_PASS")}"
-    : builder.Configuration.GetConnectionString("DefaultConnection");
+    : builder.Configuration.GetConnectionString("DefaultConnection") ?? string.Empty;
 
-// Debug output to verify configuration
-Console.WriteLine("\n=== Database Configuration ===");
-Console.WriteLine($"DB_HOST env var: {Environment.GetEnvironmentVariable("DB_HOST") ?? "NULL"}");
-Console.WriteLine($"DB_PORT env var: {Environment.GetEnvironmentVariable("DB_PORT") ?? "NULL"}");
-Console.WriteLine($"DB_NAME env var: {Environment.GetEnvironmentVariable("DB_NAME") ?? "NULL"}");
-Console.WriteLine($"DB_USER env var: {Environment.GetEnvironmentVariable("DB_USER") ?? "NULL"}");
-Console.WriteLine($"DB_PASS env var: {(Environment.GetEnvironmentVariable("DB_PASS") != null ? "***SET***" : "NULL")}");
-Console.WriteLine($"\nConnection String Source: {(Environment.GetEnvironmentVariable("DB_HOST") != null ? ".env file" : "appsettings.json")}");
-Console.WriteLine($"Connection String: {connectionString.Replace(Environment.GetEnvironmentVariable("DB_PASS") ?? "", "***")}");
-Console.WriteLine("==============================\n");
-
-builder.Services.AddDbContext<SmsRazor.DAL.Data.SmsDbContext>(options =>
-    options.UseNpgsql(connectionString));
-
+// Register BLL and DAL services through BLL's extension method
+builder.Services.AddBusinessLayer(connectionString);
 
 var app = builder.Build();
 
@@ -54,7 +43,9 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
-    app.UseStatusCodePagesWithReExecute("/NotFound");
+    // Handle specific status codes safely mapping 404 and 403.
+    // {0} is automatically replaced with the status code like 404 or 403
+    app.UseStatusCodePagesWithReExecute("/StatusCode/{0}");
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
@@ -68,9 +59,15 @@ app.UseRouting();
 app.UseMiddleware<SmsRazor.WebApp.Middleware.JwtCookieMiddleware>();
 
 app.UseAuthorization();
-
 app.MapStaticAssets();
 app.MapRazorPages()
    .WithStaticAssets();
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var accountService = services.GetRequiredService<SmsRazor.BLL.Services.IAccountService>();
+    await accountService.InitializeSystemAsync();
+}
 
 app.Run();
