@@ -62,32 +62,37 @@
     
     <div class="col-md-4">
         <div class="student-card h-100 p-4">
-            <h4 class="fw-bold mb-4">Upcoming Deadlines</h4>
+            <h4 class="fw-bold mb-4">Upcoming Classes</h4>
             
             <div class="position-relative">
-                <!-- Timeline line -->
-                <div class="position-absolute start-0 top-0 bottom-0 ms-2 border-start border-2 border-primary border-opacity-25" style="transform: translateX(4px);"></div>
-                
-                <div class="position-relative mb-4 ps-4">
-                    <div class="position-absolute start-0 top-0 mt-1 bg-white border border-2 border-danger rounded-circle" style="width: 12px; height: 12px; transform: translateX(0px);"></div>
-                    <p class="text-danger fw-bold mb-1 small">Today, 11:59 PM</p>
-                    <h6 class="fw-bold mb-1">React Assignment 2</h6>
-                    <p class="text-muted small mb-0">Web Development</p>
-                </div>
-                
-                <div class="position-relative mb-4 ps-4">
-                    <div class="position-absolute start-0 top-0 mt-1 bg-white border border-2 border-warning rounded-circle" style="width: 12px; height: 12px; transform: translateX(0px);"></div>
-                    <p class="text-warning text-dark fw-bold mb-1 small">Tomorrow, 08:00 AM</p>
-                    <h6 class="fw-bold mb-1">Midterm Exam prep</h6>
-                    <p class="text-muted small mb-0">Database Systems</p>
-                </div>
-                
-                <div class="position-relative ps-4">
-                    <div class="position-absolute start-0 top-0 mt-1 bg-white border border-2 border-primary rounded-circle" style="width: 12px; height: 12px; transform: translateX(0px);"></div>
-                    <p class="text-primary fw-bold mb-1 small">Oct 25, 2026</p>
-                    <h6 class="fw-bold mb-1">Project Milestone 1</h6>
-                    <p class="text-muted small mb-0">Web Development</p>
-                </div>
+                @if (Model.UpcomingClasses != null && Model.UpcomingClasses.Any())
+                {
+                    <!-- Timeline line -->
+                    <div class="position-absolute start-0 top-0 bottom-0 ms-2 border-start border-2 border-primary border-opacity-25" style="transform: translateX(4px);"></div>
+                    
+                    @foreach (var cls in Model.UpcomingClasses)
+                    {
+                        var isToday = cls.Date.Date == DateTime.UtcNow.Date;
+                        var dateText = isToday ? "Today" : cls.Date.ToString("MMM dd, yyyy");
+                        var timeText = $"Slot {cls.Slot}";
+                        
+                        var colorClass = isToday ? "danger" : "primary";
+
+                        <div class="position-relative mb-4 ps-4">
+                            <div class="position-absolute start-0 top-0 mt-1 bg-white border border-2 border-@colorClass rounded-circle" style="width: 12px; height: 12px; transform: translateX(0px);"></div>
+                            <p class="text-@colorClass fw-bold mb-1 small">@dateText - @timeText</p>
+                            <h6 class="fw-bold mb-1">@cls.CourseName</h6>
+                            <p class="text-muted small mb-0">@cls.SectionCode &bull; Room @cls.Room</p>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="text-center py-4 text-muted">
+                        <i class="fa-solid fa-mug-hot fa-2x mb-3 text-secondary opacity-50"></i>
+                        <p class="mb-0">You have no upcoming classes.</p>
+                    </div>
+                }
             </div>
         </div>
     </div>

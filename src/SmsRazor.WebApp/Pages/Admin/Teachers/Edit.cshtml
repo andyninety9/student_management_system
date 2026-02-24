@@ -1,0 +1,105 @@
+@page "{id}"
+@model SmsRazor.WebApp.Pages.Admin.Teachers.EditModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Edit Teacher";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="h3 mb-0 text-gray-800 fw-bold">Edit Teacher</h2>
+        <p class="text-muted small mb-0 mt-1">Update faculty account information</p>
+    </div>
+    <a asp-page="Index" class="btn btn-outline-secondary btn-sm px-4 rounded-pill shadow-sm">
+        <i class="fa-solid fa-arrow-left me-2"></i> Back to List
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden max-w-3xl mx-auto">
+    <div class="card-body p-4 p-md-5">
+        <form method="post">
+            <input type="hidden" asp-for="Teacher.AccountId" />
+            <input type="hidden" asp-for="Teacher.TeacherCode" />
+            
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-4 p-3 bg-danger bg-opacity-10 rounded-3"></div>
+
+            <h5 class="fw-bold mb-3 border-bottom pb-2">Account Information</h5>
+            
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label asp-for="Teacher.Fullname" class="form-label fw-medium text-dark"></label> <span class="text-danger">*</span>
+                    <input asp-for="Teacher.Fullname" class="form-control rounded-3" />
+                    <span asp-validation-for="Teacher.Fullname" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Teacher.Email" class="form-label fw-medium text-dark"></label> <span class="text-danger">*</span>
+                    <input asp-for="Teacher.Email" class="form-control rounded-3" />
+                    <span asp-validation-for="Teacher.Email" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Teacher.Phone" class="form-label fw-medium text-dark"></label>
+                    <input asp-for="Teacher.Phone" class="form-control rounded-3" />
+                    <span asp-validation-for="Teacher.Phone" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Teacher.Dob" class="form-label fw-medium text-dark"></label>
+                    <input asp-for="Teacher.Dob" class="form-control rounded-3" type="date" />
+                    <span asp-validation-for="Teacher.Dob" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Teacher.Gender" class="form-label fw-medium text-dark"></label>
+                    <select asp-for="Teacher.Gender" class="form-select rounded-3">
+                        <option value="">-- Select --</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <span asp-validation-for="Teacher.Gender" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6 d-flex align-items-end">
+                    <div class="form-check form-switch mb-2">
+                        <input asp-for="Teacher.IsActive" class="form-check-input" type="checkbox" id="isActiveSwitch">
+                        <label class="form-check-label ms-2" for="isActiveSwitch">Account Active</label>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <label asp-for="Teacher.Address" class="form-label fw-medium text-dark"></label>
+                    <input asp-for="Teacher.Address" class="form-control rounded-3" />
+                    <span asp-validation-for="Teacher.Address" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <h5 class="fw-bold mb-3 border-bottom pb-2 mt-4">Faculty Information</h5>
+            
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label asp-for="Teacher.TeacherCode" class="form-label fw-medium text-dark"></label>
+                    <input asp-for="Teacher.TeacherCode" class="form-control rounded-3 bg-light" disabled />
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Teacher.Title" class="form-label fw-medium text-dark"></label>
+                    <input asp-for="Teacher.Title" class="form-control rounded-3" />
+                    <span asp-validation-for="Teacher.Title" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Teacher.DepartmentId" class="form-label fw-medium text-dark"></label> <span class="text-danger">*</span>
+                    <select asp-for="Teacher.DepartmentId" asp-items="Model.Departments" class="form-select rounded-3">
+                        <option value="">-- Select Department --</option>
+                    </select>
+                    <span asp-validation-for="Teacher.DepartmentId" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-5">
+                <a asp-page="Index" class="btn btn-light rounded-pill px-4">Cancel</a>
+                <button type="submit" class="btn btn-dark rounded-pill px-4 shadow-sm">
+                    <i class="fa-solid fa-save me-2"></i> Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

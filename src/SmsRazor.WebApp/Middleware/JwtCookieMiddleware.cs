@@ -56,6 +56,7 @@ public class JwtCookieMiddleware
                path.StartsWith("/js") || 
                path.StartsWith("/lib") || 
                path.StartsWith("/images") ||
+               path.StartsWith("/student/tuition/callback") ||
                path.Equals("/notfound") ||
                path.Equals("/error");
     }

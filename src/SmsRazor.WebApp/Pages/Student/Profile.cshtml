@@ -1,0 +1,162 @@
+@page
+@model SmsRazor.WebApp.Pages.Student.ProfileModel
+@{
+    Layout = "_StudentLayout";
+    ViewData["Title"] = "My Profile";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="h3 mb-0 text-gray-800 fw-bold">My Profile</h2>
+        <p class="text-muted small mb-0 mt-1">Manage your personal information and view academic details</p>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.StatusMessage))
+{
+    var alertClass = Model.StatusMessage.StartsWith("Error") ? "alert-danger" : "alert-success";
+    <div class="alert @alertClass alert-dismissible fade show" role="alert">
+        @Model.StatusMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body p-4 text-center">
+                <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3 shadow-sm mx-auto" style="width: 100px; height: 100px; font-size: 2.5rem; font-weight: 600;">
+                    @{
+                        var initials = "ST";
+                        if (!string.IsNullOrEmpty(Model.StudentName))
+                        {
+                            var parts = Model.StudentName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                            if (parts.Length >= 2)
+                            {
+                                initials = $"{parts[0][0]}{parts[^1][0]}".ToUpper();
+                            }
+                            else if (parts.Length == 1)
+                            {
+                                initials = parts[0][0].ToString().ToUpper();
+                            }
+                        }
+                    }
+                    @initials
+                </div>
+                <h4 class="fw-bold mb-1">@Model.StudentName</h4>
+                <p class="text-muted mb-3"><i class="fa-solid fa-id-card me-2"></i>@Model.StudentCode</p>
+                <div class="d-flex align-items-center justify-content-center gap-2 mb-4">
+                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2 border border-success border-opacity-25">Student</span>
+                </div>
+                
+                <hr class="text-muted opacity-25" />
+                
+                <div class="text-start mt-4">
+                    <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-graduation-cap me-2 text-primary"></i> Academic Profile</h6>
+                    <ul class="list-unstyled mb-0 gap-3 d-flex flex-column">
+                        <li>
+                            <small class="text-muted d-block">Department</small>
+                            <span class="fw-medium text-dark">@(Model.ReadonlyProfile?.DepartmentName ?? "N/A")</span>
+                        </li>
+                        <li>
+                            <small class="text-muted d-block">Syllabus</small>
+                            <span class="fw-medium text-dark">@(Model.ReadonlyProfile?.SyllabusName ?? "N/A")</span>
+                        </li>
+                        <li>
+                            <small class="text-muted d-block">Intake</small>
+                            <span class="fw-medium text-dark">@(Model.ReadonlyProfile?.IntakeName ?? "N/A")</span>
+                        </li>
+                        <li>
+                            <small class="text-muted d-block">Academic Status</small>
+                            @if(Model.ReadonlyProfile?.StatusName == "Studying")
+                            {
+                                <span class="badge bg-success">@Model.ReadonlyProfile.StatusName</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">@(Model.ReadonlyProfile?.StatusName ?? "N/A")</span>
+                            }
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body p-4 p-md-5">
+                <form method="post">
+                    <h5 class="fw-bold mb-4 border-bottom pb-2">Personal Information</h5>
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-4 p-3 bg-danger bg-opacity-10 rounded-3"></div>
+                    
+                    <input type="hidden" asp-for="Input.AccountId" />
+                    
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium text-dark">Email Address</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fa-regular fa-envelope"></i></span>
+                                <input value="@(Model.ReadonlyProfile?.Email)" class="form-control bg-light border-start-0" disabled readonly />
+                            </div>
+                            <small class="text-muted">Contact IT to change your email.</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Input.Phone" class="form-label fw-medium text-dark"></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fa-solid fa-phone"></i></span>
+                                <input asp-for="Input.Phone" class="form-control rounded-end-3 border-start-0" placeholder="+84..." />
+                            </div>
+                            <span asp-validation-for="Input.Phone" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6">
+                            <label asp-for="Input.Dob" class="form-label fw-medium text-dark"></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fa-regular fa-calendar-days"></i></span>
+                                <input asp-for="Input.Dob" class="form-control rounded-end-3 border-start-0" type="date" />
+                            </div>
+                            <span asp-validation-for="Input.Dob" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Input.Gender" class="form-label fw-medium text-dark"></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fa-solid fa-venus-mars"></i></span>
+                                <select asp-for="Input.Gender" class="form-select rounded-end-3 border-start-0">
+                                    <option value="">-- Unspecified --</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <span asp-validation-for="Input.Gender" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="row g-4 mb-4">
+                        <div class="col-12">
+                            <label asp-for="Input.Address" class="form-label fw-medium text-dark"></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fa-solid fa-location-dot"></i></span>
+                                <input asp-for="Input.Address" class="form-control rounded-end-3 border-start-0" placeholder="123 Example Street..." />
+                            </div>
+                            <span asp-validation-for="Input.Address" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end mt-5 border-top pt-4">
+                        <button type="submit" class="btn btn-primary rounded-pill px-5 py-2 shadow-sm fw-medium">
+                            <i class="fa-solid fa-cloud-arrow-up me-2"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

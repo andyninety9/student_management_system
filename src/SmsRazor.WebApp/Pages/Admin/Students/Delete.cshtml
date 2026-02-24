@@ -1,0 +1,53 @@
+@page "{id}"
+@model SmsRazor.WebApp.Pages.Admin.Students.DeleteModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Delete Student";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="h3 mb-0 text-danger fw-bold">Delete Student</h2>
+        <p class="text-muted small mb-0 mt-1">Permanently remove a student account from the system</p>
+    </div>
+    <a asp-page="Index" class="btn btn-light border btn-sm px-3 rounded-pill d-flex align-items-center">
+        <i class="fa-solid fa-arrow-left me-2"></i> Back to List
+    </a>
+</div>
+
+<div class="card border-danger shadow-sm rounded-4 overflow-hidden" style="max-width: 700px;">
+    <div class="card-header bg-danger bg-opacity-10 py-3 border-danger border-opacity-25">
+        <h5 class="mb-0 text-danger fw-bold"><i class="fa-solid fa-triangle-exclamation me-2"></i> Warning</h5>
+    </div>
+    <div class="card-body p-4 p-md-5">
+        <h4 class="mb-3">Are you sure you want to delete this student?</h4>
+        <p class="text-muted mb-4">This action will permanently delete the student's profile <strong>and their system login account</strong>. This action cannot be undone.</p>
+        
+        <div class="bg-light p-4 rounded-3 mb-4 border">
+            <dl class="row mb-0">
+                <dt class="col-sm-4 text-muted">Student Code</dt>
+                <dd class="col-sm-8 fw-bold text-dark">@Model.Student.StudentCode</dd>
+                
+                <dt class="col-sm-4 text-muted">Full Name</dt>
+                <dd class="col-sm-8 fw-medium">@Model.Student.Fullname</dd>
+
+                <dt class="col-sm-4 text-muted">Email</dt>
+                <dd class="col-sm-8">@Model.Student.Email</dd>
+
+                <dt class="col-sm-4 text-muted">Department</dt>
+                <dd class="col-sm-8">@Model.Student.DepartmentName</dd>
+
+                <dt class="col-sm-4 text-muted">Status</dt>
+                <dd class="col-sm-8">@Model.Student.StatusName</dd>
+            </dl>
+        </div>
+
+        <form method="post">
+            <input type="hidden" asp-for="Student.StudentCode" />
+            <div class="d-flex justify-content-end gap-2">
+                <a asp-page="Index" class="btn btn-light border px-4 rounded-pill">Cancel</a>
+                <button type="submit" class="btn btn-danger px-4 rounded-pill">Confirm Delete</button>
+            </div>
+        </form>
+    </div>
+</div>

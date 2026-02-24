@@ -129,7 +129,7 @@ public class AccountService : IAccountService
         if (account.PasswordHash != hashedInputPassword)
             return new LoginResult { IsSuccess = false, ErrorMessage = "Invalid email or password." };
 
-        return new LoginResult
+        var result = new LoginResult
         {
             IsSuccess = true,
             AccountId = account.AccountId,
@@ -137,6 +137,17 @@ public class AccountService : IAccountService
             FullName = account.Fullname ?? string.Empty,
             RoleName = account.Role?.RoleName ?? "User"
         };
+        
+        if (result.RoleName == "Student")
+        {
+            var studentInfo = await _context.StudentInfos.FirstOrDefaultAsync(s => s.AccountId == account.AccountId);
+            if (studentInfo != null)
+            {
+                result.StudentCode = studentInfo.StudentCode;
+            }
+        }
+
+        return result;
     }
 
     private string HashPassword(string password)

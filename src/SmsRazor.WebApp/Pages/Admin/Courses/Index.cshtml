@@ -14,52 +14,71 @@
         <h2 class="mb-1 fw-bold tracking-tight text-dark">Course Catalog</h2>
         <p class="text-muted mb-0">Manage active courses and classes for the semester.</p>
     </div>
-    <button class="btn btn-dark px-4 py-2 fw-semibold rounded-3">
+    <a asp-page="./Create" class="btn btn-dark px-4 py-2 fw-semibold rounded-3">
         <i class="fa-solid fa-plus me-2"></i> Create Course
-    </button>
+    </a>
 </div>
 
-<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-    <div class="col">
-        <div class="card course-card h-100 bg-white shadow-none rounded-4 p-4 position-relative">
-            <span class="badge bg-dark rounded-pill fw-normal px-3 py-2 course-badge">Active</span>
-            <div class="mb-3">
-                <h5 class="fw-bold text-dark mb-1">Web Development Fundamentals</h5>
-                <p class="text-muted small">CS-302 &bull; Fall 2026</p>
-            </div>
-            <div class="mb-4 small text-muted">
-                <div class="d-flex align-items-center mb-2">
-                    <i class="fa-solid fa-user-tie me-3 opacity-50"></i> Dr. John Doe
-                </div>
-                <div class="d-flex align-items-center">
-                    <i class="fa-solid fa-users me-3 opacity-50"></i> 45 / 50 Students Enrolled
-                </div>
-            </div>
-            <div class="mt-auto pt-3 border-top d-flex">
-                <button class="btn btn-sm btn-outline-dark rounded-pill px-4 me-2">Manage</button>
-                <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 border-0">Settings</button>
-            </div>
-        </div>
-    </div>
-    <div class="col">
-        <div class="card course-card h-100 bg-white shadow-none rounded-4 p-4 position-relative">
-            <span class="badge border border-dark text-dark rounded-pill fw-normal px-3 py-2 course-badge">Upcoming</span>
-            <div class="mb-3">
-                <h5 class="fw-bold text-dark mb-1">Advanced Cloud Computing</h5>
-                <p class="text-muted small">CS-410 &bull; Spring 2027</p>
-            </div>
-            <div class="mb-4 small text-muted">
-                <div class="d-flex align-items-center mb-2">
-                    <i class="fa-solid fa-user-tie me-3 opacity-50"></i> Prof. Alice Smith
-                </div>
-                <div class="d-flex align-items-center">
-                    <i class="fa-solid fa-users me-3 opacity-50"></i> 10 / 30 Registration Open
-                </div>
-            </div>
-            <div class="mt-auto pt-3 border-top d-flex">
-                <button class="btn btn-sm btn-outline-dark rounded-pill px-4 me-2">Manage</button>
-                <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 border-0">Settings</button>
-            </div>
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 minimal-table">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4 text-uppercase text-secondary small fw-semibold">Course Name (EN)</th>
+                        <th class="text-uppercase text-secondary small fw-semibold">Course Name (VI)</th>
+                        <th class="text-uppercase text-secondary small fw-semibold text-center">Credits</th>
+                        <th class="text-uppercase text-secondary small fw-semibold text-end">Tuition Fee (VND)</th>
+                        <th class="text-uppercase text-secondary small fw-semibold text-center">Status</th>
+                        <th class="pe-4 text-uppercase text-secondary small fw-semibold text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Courses.Any())
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="fa-regular fa-folder-open fa-2x mb-3 d-block text-black-50"></i>
+                                No courses found. Click "Create Course" to add one.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var course in Model.Courses)
+                        {
+                            <tr>
+                                <td class="ps-4 fw-medium text-dark">
+                                    @course.CourseNameEng
+                                </td>
+                                <td>@course.CourseNameVI</td>
+                                <td class="text-center">
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-2">@course.CreditNumber</span>
+                                </td>
+                                <td class="text-end fw-medium text-dark">
+                                    @course.TuitionFee.ToString("N0")
+                                </td>
+                                <td class="text-center">
+                                    @if (course.IsActive)
+                                    {
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-3 py-1 fw-medium"><i class="fa-solid fa-circle fa-2xs me-1"></i> Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 rounded-pill px-3 py-1 fw-medium"><i class="fa-solid fa-circle fa-2xs me-1"></i> Inactive</span>
+                                    }
+                                </td>
+                                <td class="pe-4 text-end">
+                                    <div class="btn-group btn-group-sm rounded-pill" role="group">
+                                        <a asp-page="./Edit" asp-route-id="@course.CourseId" class="btn btn-light border btn-action"><i class="fa-regular fa-pen-to-square"></i></a>
+                                        <a asp-page="./Delete" asp-route-id="@course.CourseId" class="btn btn-light border text-danger btn-action"><i class="fa-regular fa-trash-can"></i></a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
         </div>
     </div>
 </div>

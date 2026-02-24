@@ -17,10 +17,51 @@ namespace SmsRazor.DAL.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.2")
+                .HasAnnotation("ProductVersion", "10.0.3")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("SmsRazor.DAL.Entities.AcademicCalendar", b =>
+                {
+                    b.Property<Guid>("AcademicCalendarId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("SectionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sectionID");
+
+                    b.Property<int>("Slot")
+                        .HasColumnType("integer")
+                        .HasColumnName("slot");
+
+                    b.Property<DateTime>("StudyDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("study_date");
+
+                    b.Property<Guid>("TermId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("termID");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("AcademicCalendarId");
+
+                    b.HasIndex("SectionId");
+
+                    b.HasIndex("TermId");
+
+                    b.ToTable("AcademicCalendar");
+                });
 
             modelBuilder.Entity("SmsRazor.DAL.Entities.Account", b =>
                 {
@@ -101,6 +142,136 @@ namespace SmsRazor.DAL.Migrations
                     b.ToTable("AdminInfo");
                 });
 
+            modelBuilder.Entity("SmsRazor.DAL.Entities.Attendance", b =>
+                {
+                    b.Property<Guid>("AttendanceId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AcademicCalendarId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("StudentCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("AttendanceId");
+
+                    b.HasIndex("AcademicCalendarId");
+
+                    b.HasIndex("StudentCode", "AcademicCalendarId")
+                        .IsUnique();
+
+                    b.ToTable("Attendances");
+                });
+
+            modelBuilder.Entity("SmsRazor.DAL.Entities.Conversation", b =>
+                {
+                    b.Property<Guid>("ConversationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserAccountId1")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserAccountId2")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("ConversationId");
+
+                    b.HasIndex("UserAccountId1");
+
+                    b.HasIndex("UserAccountId2");
+
+                    b.ToTable("Conversations");
+                });
+
+            modelBuilder.Entity("SmsRazor.DAL.Entities.Course", b =>
+                {
+                    b.Property<Guid>("CourseId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CourseNameEng")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("CourseNameVI")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<Guid?>("CourseRequiredID")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CreditNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal>("TuitionFee")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("CourseId");
+
+                    b.ToTable("Courses");
+                });
+
+            modelBuilder.Entity("SmsRazor.DAL.Entities.CoursePrerequisite", b =>
+                {
+                    b.Property<Guid>("CoursePrerequisiteId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CourseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("PrerequisiteCourseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("CoursePrerequisiteId");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("PrerequisiteCourseId");
+
+                    b.ToTable("CoursePrerequisites");
+                });
+
             modelBuilder.Entity("SmsRazor.DAL.Entities.Department", b =>
                 {
                     b.Property<Guid>("DepartmentId")
@@ -110,9 +281,21 @@ namespace SmsRazor.DAL.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Name")
+                    b.Property<string>("DepartmentNameEng")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("DepartmentNameVI")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("TotalCredit")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -120,6 +303,39 @@ namespace SmsRazor.DAL.Migrations
                     b.HasKey("DepartmentId");
 
                     b.ToTable("Departments");
+                });
+
+            modelBuilder.Entity("SmsRazor.DAL.Entities.Enrollment", b =>
+                {
+                    b.Property<Guid>("EnrollmentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("EnrollmentDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("SectionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("StudentCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("EnrollmentId");
+
+                    b.HasIndex("SectionId");
+
+                    b.HasIndex("StudentCode", "SectionId")
+                        .IsUnique();
+
+                    b.ToTable("Enrollment");
                 });
 
             modelBuilder.Entity("SmsRazor.DAL.Entities.Intake", b =>
@@ -141,6 +357,50 @@ namespace SmsRazor.DAL.Migrations
                     b.HasKey("IntakeId");
 
                     b.ToTable("Intakes");
+                });
+
+            modelBuilder.Entity("SmsRazor.DAL.Entities.Message", b =>
+                {
+                    b.Property<Guid>("MessageId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("ConversationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsEdited")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("SenderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("MessageId");
+
+                    b.HasIndex("ConversationId");
+
+                    b.HasIndex("SenderId");
+
+                    b.ToTable("Messages");
                 });
 
             modelBuilder.Entity("SmsRazor.DAL.Entities.Role", b =>
@@ -165,6 +425,47 @@ namespace SmsRazor.DAL.Migrations
                     b.HasKey("RoleId");
 
                     b.ToTable("Role");
+                });
+
+            modelBuilder.Entity("SmsRazor.DAL.Entities.Section", b =>
+                {
+                    b.Property<Guid>("SectionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Capacity")
+                        .HasColumnType("integer")
+                        .HasColumnName("capacity");
+
+                    b.Property<Guid>("CourseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("SectionCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("sectionCode");
+
+                    b.Property<bool>("Status")
+                        .HasColumnType("boolean")
+                        .HasColumnName("status");
+
+                    b.Property<Guid?>("TeacherAssignmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("SectionId");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("TeacherAssignmentId");
+
+                    b.ToTable("Section");
                 });
 
             modelBuilder.Entity("SmsRazor.DAL.Entities.StudentInfo", b =>
@@ -238,16 +539,91 @@ namespace SmsRazor.DAL.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
                         .HasColumnType("text");
+
+                    b.Property<DateTime>("EffectiveFrom")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("EffectiveTo")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("SyllabusName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("SyllabusId");
 
+                    b.HasIndex("DepartmentId");
+
                     b.ToTable("Syllabuses");
+                });
+
+            modelBuilder.Entity("SmsRazor.DAL.Entities.SyllabusCourse", b =>
+                {
+                    b.Property<Guid>("SyllabusCourseId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CourseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("SyllabusId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("SyllabusCourseId");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("SyllabusId");
+
+                    b.ToTable("SyllabusCourses");
+                });
+
+            modelBuilder.Entity("SmsRazor.DAL.Entities.TeacherAssignment", b =>
+                {
+                    b.Property<Guid>("TeacherAssignmentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TeacherCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("teacherCode");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("TeacherAssignmentId");
+
+                    b.HasIndex("TeacherCode");
+
+                    b.ToTable("TeacherAssignment");
                 });
 
             modelBuilder.Entity("SmsRazor.DAL.Entities.TeacherInfo", b =>
@@ -271,6 +647,107 @@ namespace SmsRazor.DAL.Migrations
                     b.HasIndex("DepartmentId");
 
                     b.ToTable("TeacherInfo");
+                });
+
+            modelBuilder.Entity("SmsRazor.DAL.Entities.Term", b =>
+                {
+                    b.Property<Guid>("TermId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("end_date");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("isActive");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("start_date");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("TermId");
+
+                    b.ToTable("Term");
+                });
+
+            modelBuilder.Entity("SmsRazor.DAL.Entities.TuitionPayment", b =>
+                {
+                    b.Property<Guid>("TuitionPaymentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("OrderInfo")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("StudentCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("TermId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("VnPayTransactionId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.HasKey("TuitionPaymentId");
+
+                    b.HasIndex("StudentCode");
+
+                    b.HasIndex("TermId");
+
+                    b.ToTable("TuitionPayments");
+                });
+
+            modelBuilder.Entity("SmsRazor.DAL.Entities.AcademicCalendar", b =>
+                {
+                    b.HasOne("SmsRazor.DAL.Entities.Section", "Section")
+                        .WithMany("Calendars")
+                        .HasForeignKey("SectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmsRazor.DAL.Entities.Term", "Term")
+                        .WithMany()
+                        .HasForeignKey("TermId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Section");
+
+                    b.Navigation("Term");
                 });
 
             modelBuilder.Entity("SmsRazor.DAL.Entities.Account", b =>
@@ -301,6 +778,118 @@ namespace SmsRazor.DAL.Migrations
                     b.Navigation("Account");
 
                     b.Navigation("Department");
+                });
+
+            modelBuilder.Entity("SmsRazor.DAL.Entities.Attendance", b =>
+                {
+                    b.HasOne("SmsRazor.DAL.Entities.AcademicCalendar", "Calendar")
+                        .WithMany()
+                        .HasForeignKey("AcademicCalendarId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmsRazor.DAL.Entities.StudentInfo", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentCode")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Calendar");
+
+                    b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("SmsRazor.DAL.Entities.Conversation", b =>
+                {
+                    b.HasOne("SmsRazor.DAL.Entities.Account", "UserAccount1")
+                        .WithMany()
+                        .HasForeignKey("UserAccountId1")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmsRazor.DAL.Entities.Account", "UserAccount2")
+                        .WithMany()
+                        .HasForeignKey("UserAccountId2")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("UserAccount1");
+
+                    b.Navigation("UserAccount2");
+                });
+
+            modelBuilder.Entity("SmsRazor.DAL.Entities.CoursePrerequisite", b =>
+                {
+                    b.HasOne("SmsRazor.DAL.Entities.Course", "Course")
+                        .WithMany("Prerequisites")
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SmsRazor.DAL.Entities.Course", "PrerequisiteCourse")
+                        .WithMany("PrerequisiteFor")
+                        .HasForeignKey("PrerequisiteCourseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+
+                    b.Navigation("PrerequisiteCourse");
+                });
+
+            modelBuilder.Entity("SmsRazor.DAL.Entities.Enrollment", b =>
+                {
+                    b.HasOne("SmsRazor.DAL.Entities.Section", "Section")
+                        .WithMany()
+                        .HasForeignKey("SectionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SmsRazor.DAL.Entities.StudentInfo", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentCode")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Section");
+
+                    b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("SmsRazor.DAL.Entities.Message", b =>
+                {
+                    b.HasOne("SmsRazor.DAL.Entities.Conversation", "Conversation")
+                        .WithMany("Messages")
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmsRazor.DAL.Entities.Account", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Conversation");
+
+                    b.Navigation("Sender");
+                });
+
+            modelBuilder.Entity("SmsRazor.DAL.Entities.Section", b =>
+                {
+                    b.HasOne("SmsRazor.DAL.Entities.Course", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmsRazor.DAL.Entities.TeacherAssignment", "TeacherAssignment")
+                        .WithMany()
+                        .HasForeignKey("TeacherAssignmentId");
+
+                    b.Navigation("Course");
+
+                    b.Navigation("TeacherAssignment");
                 });
 
             modelBuilder.Entity("SmsRazor.DAL.Entities.StudentInfo", b =>
@@ -346,6 +935,47 @@ namespace SmsRazor.DAL.Migrations
                     b.Navigation("Syllabus");
                 });
 
+            modelBuilder.Entity("SmsRazor.DAL.Entities.Syllabus", b =>
+                {
+                    b.HasOne("SmsRazor.DAL.Entities.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Department");
+                });
+
+            modelBuilder.Entity("SmsRazor.DAL.Entities.SyllabusCourse", b =>
+                {
+                    b.HasOne("SmsRazor.DAL.Entities.Course", "Course")
+                        .WithMany("SyllabusCourses")
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmsRazor.DAL.Entities.Syllabus", "Syllabus")
+                        .WithMany()
+                        .HasForeignKey("SyllabusId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+
+                    b.Navigation("Syllabus");
+                });
+
+            modelBuilder.Entity("SmsRazor.DAL.Entities.TeacherAssignment", b =>
+                {
+                    b.HasOne("SmsRazor.DAL.Entities.TeacherInfo", "TeacherInfo")
+                        .WithMany()
+                        .HasForeignKey("TeacherCode")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TeacherInfo");
+                });
+
             modelBuilder.Entity("SmsRazor.DAL.Entities.TeacherInfo", b =>
                 {
                     b.HasOne("SmsRazor.DAL.Entities.Account", "Account")
@@ -363,6 +993,44 @@ namespace SmsRazor.DAL.Migrations
                     b.Navigation("Account");
 
                     b.Navigation("Department");
+                });
+
+            modelBuilder.Entity("SmsRazor.DAL.Entities.TuitionPayment", b =>
+                {
+                    b.HasOne("SmsRazor.DAL.Entities.StudentInfo", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentCode")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmsRazor.DAL.Entities.Term", "Term")
+                        .WithMany()
+                        .HasForeignKey("TermId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Student");
+
+                    b.Navigation("Term");
+                });
+
+            modelBuilder.Entity("SmsRazor.DAL.Entities.Conversation", b =>
+                {
+                    b.Navigation("Messages");
+                });
+
+            modelBuilder.Entity("SmsRazor.DAL.Entities.Course", b =>
+                {
+                    b.Navigation("PrerequisiteFor");
+
+                    b.Navigation("Prerequisites");
+
+                    b.Navigation("SyllabusCourses");
+                });
+
+            modelBuilder.Entity("SmsRazor.DAL.Entities.Section", b =>
+                {
+                    b.Navigation("Calendars");
                 });
 #pragma warning restore 612, 618
         }

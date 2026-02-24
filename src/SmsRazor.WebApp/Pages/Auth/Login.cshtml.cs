@@ -67,6 +67,10 @@ public class LoginModel : PageModel
         {
             return RedirectToPage("/Admin/Index");
         }
+        else if (result.RoleName == "Student")
+        {
+            return RedirectToPage("/Student/Index");
+        }
 
         return LocalRedirect(ReturnUrl ?? "/");
     }
@@ -84,6 +88,11 @@ public class LoginModel : PageModel
             new Claim(ClaimTypes.Name, accountInfo.FullName),
             new Claim(ClaimTypes.Role, accountInfo.RoleName)
         };
+
+        if (accountInfo.RoleName == "Student" && !string.IsNullOrEmpty(accountInfo.StudentCode))
+        {
+            claims.Add(new Claim("StudentCode", accountInfo.StudentCode));
+        }
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {

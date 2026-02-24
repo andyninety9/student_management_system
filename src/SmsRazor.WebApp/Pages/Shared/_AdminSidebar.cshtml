@@ -28,6 +28,12 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a class="nav-link text-dark @(IsActive("/Admin/Departments") ? "active" : "")" href="/Admin/Departments">
+                    <i class="fa-solid fa-building nav-icon"></i>
+                    Departments
+                </a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link text-dark @(IsActive("/Admin/Syllabus") ? "active" : "")" href="/Admin/Syllabus">
                     <i class="fa-solid fa-book nav-icon"></i>
                     Syllabus
@@ -49,6 +55,18 @@
                 <a class="nav-link text-dark @(IsActive("/Admin/Courses") ? "active" : "")" href="/Admin/Courses">
                     <i class="fa-solid fa-layer-group nav-icon"></i>
                     Courses
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-dark @(IsActive("/Admin/Terms") ? "active" : "")" href="/Admin/Terms">
+                    <i class="fa-solid fa-calendar-days nav-icon"></i>
+                    Semesters
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-dark @(IsActive("/Admin/Sections") ? "active" : "")" href="/Admin/Sections">
+                    <i class="fa-solid fa-chalkboard nav-icon"></i>
+                    Classes
                 </a>
             </li>
         </ul>
