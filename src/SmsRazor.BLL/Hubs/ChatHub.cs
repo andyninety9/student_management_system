@@ -113,4 +113,17 @@ public class ChatHub : Hub
     {
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, conversationId.ToString());
     }
+
+    public async Task NotifyTyping(Guid conversationId, bool isTyping)
+    {
+        var senderIdString = Context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(senderIdString) || !Guid.TryParse(senderIdString, out var senderId)) return;
+
+        await Clients.Group(conversationId.ToString()).SendAsync("UserTyping", new
+        {
+            conversationId = conversationId,
+            userId = senderId,
+            isTyping = isTyping
+        });
+    }
 }
