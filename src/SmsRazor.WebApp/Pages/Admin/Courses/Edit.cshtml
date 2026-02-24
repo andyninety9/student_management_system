@@ -1,0 +1,83 @@
+@page
+@model SmsRazor.WebApp.Pages.Admin.Courses.EditModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Edit Course";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="h3 mb-0 text-gray-800 fw-bold">Edit Course</h2>
+        <p class="text-muted small mb-0 mt-1">Modify existing course details</p>
+    </div>
+    <a asp-page="Index" class="btn btn-light border btn-sm px-3 rounded-pill d-flex align-items-center">
+        <i class="fa-solid fa-arrow-left me-2"></i> Back to List
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden" style="max-width: 800px;">
+    <div class="card-body p-4 p-md-5">
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+            <input type="hidden" asp-for="Course.CourseId" />
+            
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <label asp-for="Course.CourseNameEng" class="form-label fw-medium text-dark">Course Name (English) <span class="text-danger">*</span></label>
+                    <input asp-for="Course.CourseNameEng" class="form-control rounded-3" />
+                    <span asp-validation-for="Course.CourseNameEng" class="text-danger small"></span>
+                </div>
+                
+                <div class="col-md-6">
+                    <label asp-for="Course.CourseNameVI" class="form-label fw-medium text-dark">Course Name (Vietnamese) <span class="text-danger">*</span></label>
+                    <input asp-for="Course.CourseNameVI" class="form-control rounded-3" />
+                    <span asp-validation-for="Course.CourseNameVI" class="text-danger small"></span>
+                </div>
+                
+                <div class="col-md-6">
+                    <label asp-for="Course.CreditNumber" class="form-label fw-medium text-dark">Credits <span class="text-danger">*</span></label>
+                    <input asp-for="Course.CreditNumber" class="form-control rounded-3" type="number" min="1" max="10" />
+                    <span asp-validation-for="Course.CreditNumber" class="text-danger small"></span>
+                </div>
+                
+                <div class="col-md-12">
+                    <label asp-for="Course.PrerequisiteCourseIds" class="form-label fw-medium text-dark">Prerequisites (Courses required before this)</label>
+                    <select asp-for="Course.PrerequisiteCourseIds" class="form-select rounded-3 select2-multi" asp-items="Model.CoursesList" multiple="multiple" style="width: 100%;">
+                    </select>
+                    <span asp-validation-for="Course.PrerequisiteCourseIds" class="text-danger small"></span>
+                </div>
+                
+                <div class="col-md-6 d-flex align-items-end">
+                    <div class="form-check form-switch fs-5 pb-1">
+                        <input class="form-check-input" type="checkbox" role="switch" asp-for="Course.IsActive" id="flexSwitchCheckChecked">
+                        <label class="form-check-label fs-6 mt-1 ms-2" for="flexSwitchCheckChecked">Active Course</label>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-4 text-muted border-opacity-25" />
+
+            <div class="d-flex justify-content-end gap-2">
+                <a asp-page="Index" class="btn btn-light border px-4 rounded-pill">Cancel</a>
+                <button type="submit" class="btn btn-dark px-4 rounded-pill">Update Course</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <!-- Select2 Configuration -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('.select2-multi').select2({
+                placeholder: "Search and select prerequisite courses...",
+                allowClear: true,
+                theme: "bootstrap-5" // Optional
+            });
+        });
+    </script>
+}

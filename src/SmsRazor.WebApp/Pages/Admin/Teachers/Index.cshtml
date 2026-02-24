@@ -5,57 +5,298 @@
     ViewData["Title"] = "Manage Teachers";
 }
 
-@section Styles {
-    <link rel="stylesheet" href="~/css/admin/admin-teachers.css" asp-append-version="true" />
-}
-
 <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-4">
     <div>
         <h2 class="mb-1 fw-bold tracking-tight text-dark">Teachers Directory</h2>
-        <p class="text-muted mb-0">Manage faculty members and assignments.</p>
+        <p class="text-muted mb-0">Manage faculty members, assignments, and accounts.</p>
     </div>
-    <button class="btn btn-dark px-4 py-2 fw-semibold rounded-3">
+    <a asp-page="Create" class="btn btn-dark px-4 py-2 fw-semibold rounded-3 shadow-sm">
         <i class="fa-solid fa-user-plus me-2"></i> Add Teacher
-    </button>
+    </a>
 </div>
 
-<div class="row row-cols-1 row-cols-md-3 g-4">
-    <div class="col">
-        <div class="card teacher-card h-100 bg-white shadow-none rounded-3 p-4">
-            <div class="d-flex align-items-center mb-3">
-                <div class="avatar-circle me-3 border">JD</div>
-                <div>
-                    <h5 class="mb-0 fw-bold text-dark">Dr. John Doe</h5>
-                    <p class="text-muted small mb-0">Computer Science</p>
-                </div>
-            </div>
-            <div class="mb-3 small text-muted">
-                <div class="mb-1"><i class="fa-regular fa-envelope me-2"></i> john.doe@university.edu</div>
-                <div><i class="fa-solid fa-phone me-2"></i> +1 234 567 890</div>
-            </div>
-            <div class="mt-auto pt-3 border-top d-flex justify-content-between">
-                <button class="btn btn-sm btn-outline-dark rounded-pill px-3">Profile</button>
-                <button class="btn btn-sm btn-outline-danger rounded-pill px-3">Remove</button>
-            </div>
+@if (!string.IsNullOrEmpty(Model.StatusMessage))
+{
+    var alertClass = Model.StatusMessage.StartsWith("Error") ? "alert-danger" : "alert-success";
+    <div class="alert @alertClass alert-dismissible fade show" role="alert">
+        @Model.StatusMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="teachersTable">
+                <thead class="bg-light text-muted small fw-semibold text-uppercase">
+                    <tr>
+                        <th class="px-4 py-3 border-0">Code</th>
+                        <th class="py-3 border-0">Teacher</th>
+                        <th class="py-3 border-0">Department</th>
+                        <th class="py-3 border-0">Status</th>
+                        <th class="px-4 py-3 border-0 text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="border-top-0">
+                    @if (Model.Teachers != null && Model.Teachers.Any())
+                    {
+                        foreach (var t in Model.Teachers)
+                        {
+                            <tr>
+                                <td class="px-4 py-3 text-dark fw-medium">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
+                                            <i class="fa-solid fa-chalkboard-user"></i>
+                                        </div>
+                                        @t.TeacherCode
+                                    </div>
+                                </td>
+                                <td class="py-3">
+                                    <div class="fw-bold text-dark">@(string.IsNullOrEmpty(t.Title) ? "" : t.Title + " ")@t.Fullname</div>
+                                    <div class="text-muted small"><i class="fa-regular fa-envelope me-1"></i> @t.Email</div>
+                                </td>
+                                <td class="py-3 text-dark fw-medium">@t.DepartmentName</td>
+                                <td class="py-3">
+                                    @if(t.IsActive)
+                                    {
+                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2 fw-medium border border-success border-opacity-25">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3 py-2 fw-medium border border-secondary border-opacity-25">Inactive</span>
+                                    }
+                                </td>
+                                <td class="px-4 py-3 text-end">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <a href="#" class="btn btn-sm btn-outline-info rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" title="View Timetable" data-bs-toggle="modal" data-bs-target="#timetableModal" onclick="prepareTimetable('@t.TeacherCode', '@t.Fullname')">
+                                            <i class="fa-solid fa-calendar-days"></i>
+                                        </a>
+                                        <a href="#" class="btn btn-sm btn-outline-warning rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" title="Reset Password" data-bs-toggle="modal" data-bs-target="#resetPasswordModal" onclick="prepareReset('@t.TeacherCode', '@t.Fullname')">
+                                            <i class="fa-solid fa-key"></i>
+                                        </a>
+                                        <a asp-page="Edit" asp-route-id="@t.TeacherCode" class="btn btn-sm btn-light border rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" title="Edit">
+                                            <i class="fa-solid fa-pen text-muted"></i>
+                                        </a>
+                                        <a asp-page="Delete" asp-route-id="@t.TeacherCode" class="btn btn-sm btn-light border rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" title="Delete">
+                                            <i class="fa-solid fa-trash text-danger"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <div class="mb-3"><i class="fa-solid fa-chalkboard-user fs-1 text-light"></i></div>
+                                <div>No teachers found.</div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
     </div>
-    <div class="col">
-        <div class="card teacher-card h-100 bg-white shadow-none rounded-3 p-4">
-            <div class="d-flex align-items-center mb-3">
-                <div class="avatar-circle me-3 border">AS</div>
-                <div>
-                    <h5 class="mb-0 fw-bold text-dark">Prof. Alice Smith</h5>
-                    <p class="text-muted small mb-0">Mathematics</p>
+</div>
+
+<!-- Reset Password Modal -->
+<div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-4">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold text-dark">Reset Password</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="ResetPassword">
+                <div class="modal-body">
+                    <p class="text-muted small mb-4">Set a new password for <strong id="resetTargetName" class="text-dark"></strong>.</p>
+                    <input type="hidden" name="teacherCode" id="resetTeacherCode" />
+                    <div class="mb-3">
+                        <label class="form-label fw-medium text-dark">New Password <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="text" id="newPasswordInput" name="newPassword" class="form-control bg-light" required minlength="6" readonly />
+                            <button class="btn btn-outline-secondary" type="button" id="generateBtn" onclick="generateRandomPassword()" title="Generate New Password"><i class="fa-solid fa-arrows-rotate"></i></button>
+                            <button class="btn btn-outline-secondary" type="button" id="copyBtn" onclick="copyPassword()" title="Copy to clipboard"><i class="fa-regular fa-copy"></i></button>
+                        </div>
+                        <div class="form-text text-warning mt-2"><i class="fa-solid fa-triangle-exclamation"></i> Please copy the password before confirming.</div>
+                    </div>
                 </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning rounded-pill px-4">Confirm Reset</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Timetable Modal -->
+<div class="modal fade" id="timetableModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-4">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold text-dark">Teacher Timetable <span id="timetableTargetName" class="text-primary ms-2 fs-5"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="mb-3 small text-muted">
-                <div class="mb-1"><i class="fa-regular fa-envelope me-2"></i> alice.smith@university.edu</div>
-                <div><i class="fa-solid fa-phone me-2"></i> +1 987 654 321</div>
-            </div>
-            <div class="mt-auto pt-3 border-top d-flex justify-content-between">
-                <button class="btn btn-sm btn-outline-dark rounded-pill px-3">Profile</button>
-                <button class="btn btn-sm btn-outline-danger rounded-pill px-3">Remove</button>
+            <div class="modal-body pb-0 pt-2">
+                 <div class="row mb-3 px-2">
+                     <div class="col-md-4">
+                         <label class="form-label fw-medium text-dark small mb-1">Select Term / Semester</label>
+                         <select id="timetableTermSelect" asp-items="Model.TermsList" class="form-select form-select-sm rounded-3">
+                         </select>
+                     </div>
+                 </div>
+                 <div class="border rounded-3 shadow-sm bg-white p-3 mb-3">
+                     <div id="calendar" style="min-height: 500px;"></div>
+                 </div>
             </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            if ($('#teachersTable tbody tr').length > 0 && !$('#teachersTable tbody tr td').hasClass('dataTables_empty') && $('#teachersTable tbody tr td').length > 1) {
+                $('#teachersTable').DataTable({
+                    "pageLength": 10,
+                    "ordering": true,
+                    "info": true,
+                    "lengthChange": false,
+                    "language": {
+                        "search": "",
+                        "searchPlaceholder": "Search teachers..."
+                    },
+                    "dom": "<'row mb-3'<'col-md-6'f><'col-md-6 text-end'>>" +
+                           "<'row'<'col-sm-12'tr>>" +
+                           "<'row mt-3'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>"
+                });
+                
+                // Style the search box to match our theme
+                $('.dataTables_filter input').addClass('form-control rounded-pill border-light shadow-sm px-3');
+            }
+            
+            // FullCalendar initialization
+            var calendarEl = document.getElementById('calendar');
+            window.teacherCalendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'timeGridWeek',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                slotMinTime: '07:00:00',
+                slotMaxTime: '22:30:00',
+                allDaySlot: false,
+                height: 550,
+                events: []
+            });
+
+            // Handle term selection changes for timetable inside modal
+            $('#timetableTermSelect').on('change', function() {
+                var termId = $(this).val();
+                if (window.currentTimetableTeacher && termId) {
+                    loadTeacherSchedule(window.currentTimetableTeacher, termId);
+                }
+            });
+
+            // Make sure the calendar renders correctly when the modal is fully shown
+            $('#timetableModal').on('shown.bs.modal', function () {
+                window.teacherCalendar.render();
+            });
+        });
+
+        function prepareTimetable(code, name) {
+            document.getElementById('timetableTargetName').innerText = "- " + name;
+            window.currentTimetableTeacher = code;
+            
+            // Trigger load if term is already selected
+            var termId = $('#timetableTermSelect').val();
+            if (termId) {
+                loadTeacherSchedule(code, termId);
+            }
+        }
+
+        function loadTeacherSchedule(teacherCode, termId) {
+            $.getJSON('?handler=TeacherSchedule', { teacherCode: teacherCode, termId: termId }, function(data) {
+                window.teacherCalendar.removeAllEvents();
+                if (data && data.length > 0) {
+                    window.teacherCalendar.gotoDate(data[0].start);
+                    $.each(data, function(index, ev) {
+                        window.teacherCalendar.addEvent(ev);
+                    });
+                } else {
+                    window.teacherCalendar.gotoDate(new Date()); // back to today
+                }
+            }).fail(function() {
+                console.error("Failed to fetch teacher schedule.");
+            });
+        }
+
+        function prepareReset(code, name) {
+            document.getElementById('resetTeacherCode').value = code;
+            document.getElementById('resetTargetName').innerText = name;
+            generateRandomPassword();
+        }
+
+        function generateRandomPassword() {
+            const length = 10;
+            const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@@#$%^&*";
+            let retVal = "";
+            for (let i = 0, n = charset.length; i < length; ++i) {
+                retVal += charset.charAt(Math.floor(Math.random() * n));
+            }
+            
+            // Ensure at least 1 upper, 1 lower, 1 digit, 1 special character
+            const uppers = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            const lowers = "abcdefghijklmnopqrstuvwxyz";
+            const numbers = "0123456789";
+            const specials = "!@@#$%^&*";
+            
+            retVal = retVal.substring(4) 
+                   + uppers.charAt(Math.floor(Math.random() * uppers.length))
+                   + lowers.charAt(Math.floor(Math.random() * lowers.length))
+                   + numbers.charAt(Math.floor(Math.random() * numbers.length))
+                   + specials.charAt(Math.floor(Math.random() * specials.length));
+                   
+            // Shuffle
+            retVal = retVal.split('').sort(() => 0.5 - Math.random()).join('');
+
+            document.getElementById('newPasswordInput').value = retVal;
+            
+            const copyBtn = document.getElementById('copyBtn');
+            copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i>';
+            copyBtn.classList.remove('btn-success');
+            copyBtn.classList.add('btn-outline-secondary');
+        }
+
+        function copyPassword() {
+            const passwordInput = document.getElementById('newPasswordInput');
+            passwordInput.select();
+            passwordInput.setSelectionRange(0, 99999);
+            
+            navigator.clipboard.writeText(passwordInput.value).then(() => {
+                const copyBtn = document.getElementById('copyBtn');
+                copyBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
+                copyBtn.classList.remove('btn-outline-secondary');
+                copyBtn.classList.add('btn-success');
+                setTimeout(() => {
+                    copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i>';
+                    copyBtn.classList.remove('btn-success');
+                    copyBtn.classList.add('btn-outline-secondary');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        }
+    </script>
+}

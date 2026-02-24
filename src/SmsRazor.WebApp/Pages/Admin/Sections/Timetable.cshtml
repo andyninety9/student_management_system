@@ -1,0 +1,131 @@
+@page "{id:guid}"
+@model SmsRazor.WebApp.Pages.Admin.Sections.TimetableModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Class Timetable";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="h3 mb-0 text-gray-800 fw-bold">Timetable Detail</h2>
+        <p class="text-muted small mb-0 mt-1">Calendar slots for Class <strong>@Model.SectionDto?.SectionCode</strong></p>
+    </div>
+    <a asp-page="Index" class="btn btn-outline-secondary btn-sm px-4 rounded-pill shadow-sm">
+        <i class="fa-solid fa-arrow-left me-2"></i> Back to Classes
+    </a>
+</div>
+
+@if (Model.SectionDto != null)
+{
+    <div class="row g-4">
+        <!-- Summary Card -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4 border-bottom pb-2">Class Summary</h5>
+                    
+                    <ul class="list-unstyled mb-0 gap-3 d-flex flex-column">
+                        <li class="d-flex align-items-center">
+                            <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                <i class="fa-solid fa-layer-group"></i>
+                            </div>
+                            <div>
+                                <small class="text-muted d-block">Course</small>
+                                <span class="fw-bold text-dark">@Model.SectionDto.CourseName</span>
+                            </div>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <div class="bg-info bg-opacity-10 text-info rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                <i class="fa-solid fa-calendar-days"></i>
+                            </div>
+                            <div>
+                                <small class="text-muted d-block">Term</small>
+                                <span class="fw-bold text-dark">@Model.SectionDto.TermName</span>
+                            </div>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <div class="bg-warning bg-opacity-10 text-warning rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                <i class="fa-solid fa-chalkboard-user"></i>
+                            </div>
+                            <div>
+                                <small class="text-muted d-block">Primary Teacher</small>
+                                <span class="fw-bold text-dark">@Model.SectionDto.TeacherName</span>
+                                <small class="d-block text-muted">@Model.SectionDto.TeacherCode</small>
+                            </div>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <div class="bg-success bg-opacity-10 text-success rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                <i class="fa-solid fa-list-ol"></i>
+                            </div>
+                            <div>
+                                <small class="text-muted d-block">Total Sessions</small>
+                                <span class="fw-bold text-dark">@Model.SectionDto.TotalSessions slots</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timetable List -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-header bg-white border-bottom p-4">
+                    <h5 class="fw-bold mb-0">Scheduled Slots</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light text-muted small fw-semibold text-uppercase sticky-top">
+                                <tr>
+                                    <th class="px-4 py-3 border-0">Session</th>
+                                    <th class="py-3 border-0">Study Date</th>
+                                    <th class="py-3 border-0">Day of Week</th>
+                                    <th class="py-3 border-0 text-center">Slot</th>
+                                    <th class="px-4 py-3 border-0 text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="border-top-0">
+                                @if (Model.Calendars != null && Model.Calendars.Any())
+                                {
+                                    int counter = 1;
+                                    foreach (var c in Model.Calendars)
+                                    {
+                                        <tr>
+                                            <td class="px-4 py-3 text-muted fw-medium border-bottom">#@counter</td>
+                                            <td class="py-3 fw-bold text-dark border-bottom">@c.StudyDate.ToString("dd MMM yyyy")</td>
+                                            <td class="py-3 text-muted border-bottom">@c.StudyDate.DayOfWeek.ToString()</td>
+                                            <td class="py-3 text-center border-bottom">
+                                                <span class="badge bg-dark bg-opacity-10 text-dark px-3 py-2 rounded-pill border">Slot @c.Slot</span>
+                                            </td>
+                                            <td class="px-4 py-3 text-center border-bottom">
+                                                @if (c.IsActive)
+                                                {
+                                                    <span class="badge bg-success bg-opacity-10 text-success px-3 py-1 rounded-pill">Scheduled</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-danger bg-opacity-10 text-danger px-3 py-1 rounded-pill">Cancelled</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                        counter++;
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="5" class="text-center py-5 text-muted">
+                                            <div class="mb-3"><i class="fa-regular fa-calendar-xmark fs-2 text-light"></i></div>
+                                            <div>No timetable slots generated for this class.</div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}

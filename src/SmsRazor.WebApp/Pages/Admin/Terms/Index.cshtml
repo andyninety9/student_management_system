@@ -1,0 +1,113 @@
+@page
+@model SmsRazor.WebApp.Pages.Admin.Terms.IndexModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Manage Semesters";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-4">
+    <div>
+        <h2 class="mb-1 fw-bold tracking-tight text-dark">Semesters (Terms) Directory</h2>
+        <p class="text-muted mb-0">Manage academic terms and their timelines.</p>
+    </div>
+    <a asp-page="Create" class="btn btn-dark px-4 py-2 fw-semibold rounded-3 shadow-sm">
+        <i class="fa-solid fa-plus me-2"></i> Create Semester
+    </a>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.StatusMessage))
+{
+    var alertClass = Model.StatusMessage.StartsWith("Error") ? "alert-danger" : "alert-success";
+    <div class="alert @alertClass alert-dismissible fade show" role="alert">
+        @Model.StatusMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="termsTable">
+                <thead class="bg-light text-muted small fw-semibold text-uppercase">
+                    <tr>
+                        <th class="px-4 py-3 border-0">Code</th>
+                        <th class="py-3 border-0">Name</th>
+                        <th class="py-3 border-0">Start Date</th>
+                        <th class="py-3 border-0">End Date</th>
+                        <th class="py-3 border-0 text-center">Status</th>
+                        <th class="px-4 py-3 border-0 text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="border-top-0">
+                    @if (Model.Terms != null && Model.Terms.Any())
+                    {
+                        foreach (var term in Model.Terms)
+                        {
+                            <tr>
+                                <td class="px-4 py-3 text-dark fw-bold">@term.Code</td>
+                                <td class="py-3 fw-medium">@term.Name</td>
+                                <td class="py-3">@term.StartDate.ToString("MMM dd, yyyy")</td>
+                                <td class="py-3">@term.EndDate.ToString("MMM dd, yyyy")</td>
+                                <td class="py-3 text-center">
+                                    @if(term.IsActive)
+                                    {
+                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2 fw-medium border border-success border-opacity-25">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3 py-2 fw-medium border border-secondary border-opacity-25">Inactive</span>
+                                    }
+                                </td>
+                                <td class="px-4 py-3 text-end">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <a asp-page="Edit" asp-route-id="@term.TermId" class="btn btn-sm btn-light border rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" title="Edit">
+                                            <i class="fa-solid fa-pen text-muted"></i>
+                                        </a>
+                                        <a asp-page="Delete" asp-route-id="@term.TermId" class="btn btn-sm btn-light border rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" title="Delete">
+                                            <i class="fa-solid fa-trash text-danger"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <div class="mb-3"><i class="fa-regular fa-calendar-days fs-1 text-light"></i></div>
+                                <div>No semesters found. Please create one.</div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- DataTables CSS/JS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            if ($('#termsTable tbody tr').length > 0 && !$('#termsTable tbody tr td').hasClass('dataTables_empty') && $('#termsTable tbody tr td').length > 1) {
+                $('#termsTable').DataTable({
+                    "pageLength": 10,
+                    "ordering": true,
+                    "order": [[2, "desc"]], // Sort by Start Date desc
+                    "info": true,
+                    "lengthChange": false,
+                    "language": {
+                        "search": "",
+                        "searchPlaceholder": "Search terms..."
+                    }
+                });
+                $('.dataTables_filter input').addClass('form-control rounded-pill border-light shadow-sm px-3');
+            }
+        });
+    </script>
+}

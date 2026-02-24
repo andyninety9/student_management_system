@@ -28,35 +28,50 @@
             <div class="collapse navbar-collapse" id="studentNavbar">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-4 gap-2">
                     <li class="nav-item">
-                        <a class="student-nav-link active" href="/Student/Index">Dashboard</a>
+                        <a class="student-nav-link @(Context.Request.Path.Value == "/Student/Index" ? "active" : "")" href="/Student/Index">Dashboard</a>
                     </li>
                     <li class="nav-item">
-                        <a class="student-nav-link" href="#">My Courses</a>
+                        <a class="student-nav-link @(Context.Request.Path.Value?.StartsWith("/Student/Registration") == true ? "active" : "")" href="/Student/Registration">Register Classes</a>
                     </li>
                     <li class="nav-item">
                         <a class="student-nav-link" href="#">Grades</a>
                     </li>
                     <li class="nav-item">
-                        <a class="student-nav-link" href="#">Schedule</a>
+                        <a class="student-nav-link @(Context.Request.Path.Value?.StartsWith("/Student/Timetable") == true ? "active" : "")" href="/Student/Timetable">Schedule</a>
                     </li>
                 </ul>
                 
+                @{
+                    var studentName = User.Identity?.Name ?? "Student Name";
+                    var initials = "ST";
+                    if (!string.IsNullOrEmpty(studentName))
+                    {
+                        var parts = studentName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length >= 2)
+                        {
+                            initials = $"{parts[0][0]}{parts[^1][0]}".ToUpper();
+                        }
+                        else if (parts.Length == 1)
+                        {
+                            initials = parts[0][0].ToString().ToUpper();
+                        }
+                    }
+                }
                 <div class="d-flex align-items-center">
                     <div class="dropdown">
                         <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle text-dark" id="dropdownUser" data-bs-toggle="dropdown">
                             <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 36px; height: 36px; font-weight: 600;">
-                                ST
+                                @initials
                             </div>
-                            <span class="fw-medium">Student Name</span>
+                            <span class="fw-medium">@studentName</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2" aria-labelledby="dropdownUser">
-                            <li><a class="dropdown-item py-2" href="#"><i class="fa-regular fa-user me-2 opacity-50"></i> Profile</a></li>
-                            <li><a class="dropdown-item py-2" href="#"><i class="fa-solid fa-gear me-2 opacity-50"></i> Settings</a></li>
+                            <li><a class="dropdown-item py-2" href="/Student/Profile"><i class="fa-regular fa-user me-2 opacity-50"></i> Profile</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <form asp-page="/Auth/Logout" method="post" class="m-0 p-0">
-                                    <button type="submit" class="dropdown-item text-danger py-2"><i class="fa-solid fa-arrow-right-from-bracket me-2 opacity-50"></i> Logout</button>
-                                </form>
+                                <a href="/Auth/Logout" class="dropdown-item text-danger py-2">
+                                    <i class="fa-solid fa-arrow-right-from-bracket me-2 opacity-50"></i> Logout
+                                </a>
                             </li>
                         </ul>
                     </div>
@@ -77,6 +92,7 @@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

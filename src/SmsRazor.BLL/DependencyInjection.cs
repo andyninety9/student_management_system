@@ -13,6 +13,14 @@ public static class DependencyInjection
             options.UseNpgsql(connectionString));
 
         services.AddScoped<IAccountService, AccountService>();
+        services.AddScoped<ICourseService, CourseService>();
+        services.AddScoped<ISyllabusService, SyllabusService>();
+        services.AddScoped<IDepartmentService, DepartmentService>();
+        services.AddScoped<IStudentService, StudentService>();
+        services.AddScoped<ITeacherService, TeacherService>();
+        services.AddScoped<ISectionService, SectionService>();
+        services.AddScoped<ITermService, TermService>();
+        services.AddScoped<IEnrollmentService, EnrollmentService>();
 
         return services;
     }
