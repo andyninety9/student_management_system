@@ -1,0 +1,27 @@
+@page
+@model SmsRazor.WebApp.Pages.Student.Tuition.CallbackModel
+@{
+    Layout = "_StudentLayout";
+    ViewData["Title"] = "Payment Result";
+}
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8 col-lg-6">
+        <div class="card border-0 shadow-sm rounded-4 text-center p-5">
+            @if (Model.IsSuccess)
+            {
+                <i class="fa-solid fa-circle-check fa-5x text-success mb-4"></i>
+                <h2 class="fw-bold text-dark mb-3">Payment Successful!</h2>
+                <p class="text-muted mb-5">Your tuition fee transaction has been processed and recorded successfully.</p>
+                <a asp-page="/Student/Tuition/Index" class="btn btn-primary px-5 py-2 rounded-pill fw-bold">Return to Tuition Page</a>
+            }
+            else
+            {
+                <i class="fa-solid fa-circle-xmark fa-5x text-danger mb-4"></i>
+                <h2 class="fw-bold text-dark mb-3">Payment Failed</h2>
+                <p class="text-muted mb-5">We could not process your transaction. Please check your balance or try again later.</p>
+                <a asp-page="/Student/Tuition/Index" class="btn btn-outline-danger px-5 py-2 rounded-pill fw-bold">Try Again</a>
+            }
+        </div>
+    </div>
+</div>

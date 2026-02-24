@@ -1,0 +1,140 @@
+@page
+@model SmsRazor.WebApp.Pages.Teacher.IndexModel
+@{
+    Layout = "_TeacherLayout";
+    ViewData["Title"] = "Teacher Dashboard";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold">Welcome, @User.Identity?.Name!</h3>
+    <p class="text-muted mb-0">Today is @DateTime.Now.ToString("dddd, MMMM dd, yyyy")</p>
+</div>
+
+<!-- Stats Row -->
+<div class="row mb-4">
+    <div class="col-md-6 mb-3 mb-md-0">
+        <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+            <div class="card-body p-4 d-flex align-items-center">
+                <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex justify-content-center align-items-center me-4" style="width: 60px; height: 60px;">
+                    <i class="fa-solid fa-graduation-cap fa-2x"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted fw-bold mb-1">Total Students</h6>
+                    <h3 class="fw-bold mb-0">@Model.TotalStudents</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+            <div class="card-body p-4 d-flex align-items-center">
+                <div class="bg-success bg-opacity-10 text-success rounded-circle d-flex justify-content-center align-items-center me-4" style="width: 60px; height: 60px;">
+                    <i class="fa-solid fa-chalkboard fa-2x"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted fw-bold mb-1">Active Classes</h6>
+                    <h3 class="fw-bold mb-0">@Model.TotalClasses</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Upcoming Schedule -->
+    <div class="col-lg-8 mb-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-header bg-white border-bottom-0 pt-4 pb-0 px-4 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0"><i class="fa-regular fa-calendar text-primary me-2"></i>Upcoming Schedule</h5>
+            </div>
+            <div class="card-body p-4">
+                @if (Model.UpcomingClasses.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="rounded-start">Date</th>
+                                    <th>Course</th>
+                                    <th>Class</th>
+                                    <th>Slot</th>
+                                    <th class="rounded-end">Room</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var c in Model.UpcomingClasses)
+                                {
+                                    var isToday = ((DateTime)c.Date).Date == DateTime.Today;
+                                    <tr>
+                                        <td>
+                                            @if (isToday)
+                                            {
+                                                <span class="badge bg-danger rounded-pill px-3 py-2">Today</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted fw-medium">@(((DateTime)c.Date).ToString("MMM dd, yyyy"))</span>
+                                            }
+                                        </td>
+                                        <td class="fw-bold text-primary">@c.CourseCode</td>
+                                        <td>@c.SectionName</td>
+                                        <td><span class="badge bg-light text-dark border">Slot @c.Slot</span></td>
+                                        <td class="text-muted"><i class="fa-solid fa-location-dot me-1"></i>@c.Room</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5 text-muted">
+                        <i class="fa-regular fa-calendar-xmark fa-3x mb-3 opacity-25"></i>
+                        <p class="mb-0">You have no upcoming classes assigned.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="col-lg-4 mb-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-header bg-white border-bottom-0 pt-4 pb-0 px-4">
+                <h5 class="fw-bold mb-0"><i class="fa-solid fa-bolt text-warning me-2"></i>Quick Actions</h5>
+            </div>
+            <div class="card-body p-4 d-flex flex-column gap-3">
+                <a href="/Chat" class="btn btn-primary text-start rounded-3 p-3 d-flex align-items-center transition-all hover-shadow">
+                    <div class="bg-white bg-opacity-25 rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 40px; height: 40px;">
+                        <i class="fa-regular fa-message text-white"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold text-white">Messages</div>
+                        <div class="small text-white text-opacity-75">Connect with students</div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right ms-auto text-white"></i>
+                </a>
+                
+                <a href="#" class="btn btn-outline-dark text-start rounded-3 p-3 d-flex align-items-center transition-all hover-shadow">
+                    <div class="bg-light rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 40px; height: 40px;">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold">My Classes</div>
+                        <div class="small text-muted">Manage class attendance</div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right ms-auto"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .hover-shadow:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        }
+    </style>
+}

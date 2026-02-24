@@ -41,6 +41,7 @@ public class CourseService : ICourseService
             CourseNameEng = c.CourseNameEng,
             CourseNameVI = c.CourseNameVI,
             CreditNumber = c.CreditNumber,
+            TuitionFee = c.TuitionFee,
             IsActive = c.IsActive,
             CourseRequiredID = c.CourseRequiredID
         });
@@ -60,6 +61,7 @@ public class CourseService : ICourseService
             CourseNameEng = course.CourseNameEng,
             CourseNameVI = course.CourseNameVI,
             CreditNumber = course.CreditNumber,
+            TuitionFee = course.TuitionFee,
             IsActive = course.IsActive,
             CourseRequiredID = course.CourseRequiredID,
             PrerequisiteCourseIds = course.Prerequisites.Select(p => p.PrerequisiteCourseId).ToList()
@@ -74,6 +76,7 @@ public class CourseService : ICourseService
             CourseNameEng = dto.CourseNameEng,
             CourseNameVI = dto.CourseNameVI,
             CreditNumber = dto.CreditNumber,
+            TuitionFee = dto.TuitionFee,
             IsActive = dto.IsActive,
             CourseRequiredID = dto.CourseRequiredID,
             Prerequisites = dto.PrerequisiteCourseIds != null ? dto.PrerequisiteCourseIds.Select(pid => new CoursePrerequisite
@@ -100,6 +103,7 @@ public class CourseService : ICourseService
         course.CourseNameEng = dto.CourseNameEng;
         course.CourseNameVI = dto.CourseNameVI;
         course.CreditNumber = dto.CreditNumber;
+        course.TuitionFee = dto.TuitionFee;
         course.IsActive = dto.IsActive;
         course.CourseRequiredID = dto.CourseRequiredID;
         

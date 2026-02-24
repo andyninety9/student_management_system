@@ -21,6 +21,10 @@ public static class DependencyInjection
         services.AddScoped<ISectionService, SectionService>();
         services.AddScoped<ITermService, TermService>();
         services.AddScoped<IEnrollmentService, EnrollmentService>();
+        services.AddScoped<IAttendanceService, AttendanceService>();
+        services.AddScoped<ITuitionService, TuitionService>();
+        services.AddScoped<IChatService, ChatService>();
+        services.AddScoped<IBlobStorageService, BlobStorageService>();
 
         return services;
     }

@@ -40,6 +40,12 @@
                     <span asp-validation-for="Course.CreditNumber" class="text-danger small"></span>
                 </div>
                 
+                <div class="col-md-6">
+                    <label asp-for="Course.TuitionFee" class="form-label fw-medium text-dark">Tuition Fee (VND) <span class="text-danger">*</span></label>
+                    <input asp-for="Course.TuitionFee" class="form-control rounded-3" type="number" step="1000" min="0" placeholder="e.g. 5000000" />
+                    <span asp-validation-for="Course.TuitionFee" class="text-danger small"></span>
+                </div>
+                
                 <div class="col-md-12">
                     <label asp-for="Course.PrerequisiteCourseIds" class="form-label fw-medium text-dark">Prerequisites (Courses required before this)</label>
                     <select asp-for="Course.PrerequisiteCourseIds" class="form-select rounded-3 select2-multi" asp-items="Model.CoursesList" multiple="multiple" style="width: 100%;">

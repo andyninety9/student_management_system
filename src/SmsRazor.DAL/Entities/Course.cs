@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SmsRazor.DAL.Entities;
 
@@ -17,6 +18,9 @@ public class Course : BaseEntity
     public string CourseNameVI { get; set; } = string.Empty;
 
     public int CreditNumber { get; set; }
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal TuitionFee { get; set; } = 0;
 
     public bool IsActive { get; set; } = true;
 

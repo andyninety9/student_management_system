@@ -1,0 +1,114 @@
+@page
+@model SmsRazor.WebApp.Pages.Student.Attendance.IndexModel
+@{
+    Layout = "_StudentLayout";
+    ViewData["Title"] = "Attendance Report";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="h3 mb-0 text-gray-800 fw-bold">Attendance Report</h2>
+        <p class="text-muted small mb-0 mt-1">Select a term to view your attendance records for each course.</p>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 rounded-4 mb-4">
+    <div class="card-body p-4">
+        <form method="get" class="row gx-3 gy-2 align-items-center">
+            <div class="col-sm-4">
+                <label class="visually-hidden" for="SelectedTermId">Term</label>
+                <select class="form-select border-primary" asp-for="SelectedTermId" asp-items="Model.TermsList" onchange="this.form.submit()">
+                    <option value="">-- Select Active Term --</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <noscript>
+                    <button type="submit" class="btn btn-primary">View</button>
+                </noscript>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (Model.SelectedTermId != Guid.Empty)
+{
+    @if (!Model.AttendanceRecords.Any())
+    {
+        <div class="text-center py-5">
+            <i class="fa-solid fa-folder-open fa-3x mb-3 text-secondary opacity-50"></i>
+            <h5 class="text-muted">No attendance data found for this term.</h5>
+        </div>
+    }
+    else
+    {
+        <div class="accordion accordion-flush rounded-4 shadow-sm border" id="attendanceAccordion">
+            @foreach (var record in Model.AttendanceRecords.Select((value, index) => new { value, index }))
+            {
+                var r = record.value;
+                var idx = record.index;
+                var headingId = $"heading{idx}";
+                var collapseId = $"collapse{idx}";
+                
+                var barColor = r.AbsencePercentage > 20 ? "bg-danger" : (r.AbsencePercentage > 10 ? "bg-warning" : "bg-success");
+
+                <div class="accordion-item bg-transparent border-0 border-bottom">
+                    <h2 class="accordion-header" id="@headingId">
+                        <button class="accordion-button @(idx == 0 ? "" : "collapsed") bg-white" type="button" data-bs-toggle="collapse" data-bs-toggle="target="#@collapseId" aria-expanded="@(idx == 0 ? "true" : "false")" aria-controls="@collapseId">
+                            <div class="d-flex flex-column w-100 pe-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-bold fs-5 text-dark">@r.CourseName</span>
+                                    <span class="badge bg-light text-dark border">@r.SectionCode</span>
+                                </div>
+                                <div class="d-flex align-items-center mb-1">
+                                    <small class="text-muted me-3">Absent: <span class="fw-bold text-dark">@r.AbsentSessions</span> / @r.TotalSessions</small>
+                                    <div class="progress flex-grow-1" style="height: 6px;">
+                                        <div class="progress-bar @barColor" role="progressbar" style="width: @r.AbsencePercentage%" aria-valuenow="@r.AbsencePercentage" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <small class="ms-3 fw-bold @barColor.Replace("bg-", "text-")">@r.AbsencePercentage% absent</small>
+                                </div>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="@collapseId" class="accordion-collapse collapse @(idx == 0 ? "show" : "")" aria-labelledby="@headingId" data-bs-parent="#attendanceAccordion">
+                        <div class="accordion-body bg-light p-0">
+                            <ul class="list-group list-group-flush">
+                                @foreach (var detail in r.Details)
+                                {
+                                    var statusColor = detail.Status switch {
+                                        SmsRazor.DAL.Entities.AttendanceStatus.Present => "success",
+                                        SmsRazor.DAL.Entities.AttendanceStatus.Absent => "danger",
+                                        SmsRazor.DAL.Entities.AttendanceStatus.Excused => "warning",
+                                        _ => "secondary"
+                                    };
+                                    
+                                    var icon = detail.Status switch {
+                                        SmsRazor.DAL.Entities.AttendanceStatus.Present => "fa-circle-check",
+                                        SmsRazor.DAL.Entities.AttendanceStatus.Absent => "fa-circle-xmark",
+                                        SmsRazor.DAL.Entities.AttendanceStatus.Excused => "fa-circle-exclamation",
+                                        _ => "fa-circle-question"
+                                    };
+
+                                    <li class="list-group-item d-flex justify-content-between align-items-center py-3 bg-transparent border-bottom border-light">
+                                        <div>
+                                            <h6 class="mb-1 fw-medium">@detail.Date.ToString("ddd, MMM dd, yyyy") <span class="text-muted small fw-normal ms-2">Slot @detail.Slot</span></h6>
+                                            <p class="mb-0 small text-muted"><i class="fa-solid fa-location-dot me-1"></i> Room @detail.Room &nbsp;&nbsp;|&nbsp;&nbsp; <i class="fa-solid fa-user-tie me-1"></i> @detail.Teacher</p>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge bg-@statusColor bg-opacity-10 text-@statusColor px-3 py-2 rounded-pill border border-@statusColor border-opacity-25">
+                                                <i class="fa-solid @icon me-1"></i> @detail.Status.ToString()
+                                            </span>
+                                            @if (!string.IsNullOrEmpty(detail.Remarks))
+                                            {
+                                                <div class="mt-1 small text-muted fst-italic">@detail.Remarks</div>
+                                            }
+                                        </div>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+}

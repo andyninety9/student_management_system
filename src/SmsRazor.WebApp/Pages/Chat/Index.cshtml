@@ -1,0 +1,319 @@
+@page
+@model SmsRazor.WebApp.Pages.Chat.IndexModel
+@{
+    Layout = "_StudentLayout"; // Defaulting to StudentLayout, could be tailored to claims later
+    ViewData["Title"] = "Messages";
+}
+
+@functions {
+    public string GetInitials(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "U";
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 2) return $"{parts[0][0]}{parts[^1][0]}".ToUpper();
+        return parts[0][0].ToString().ToUpper();
+    }
+}
+
+<div class="row g-0 vh-100" style="margin-top: -1.5rem; margin-bottom: -1.5rem; margin-left: -1.5rem; margin-right: -1.5rem;">
+    <!-- Sidebar: Conversations List -->
+    <div class="col-md-4 col-lg-3 border-end bg-white d-flex flex-column h-100 position-relative">
+        <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-light">
+            <h5 class="fw-bold mb-0">Chats</h5>
+            <button class="btn btn-sm btn-light rounded-circle" data-bs-toggle="modal" data-bs-target="#newChatModal">
+                <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+        </div>
+        
+        <div class="flex-grow-1 overflow-auto p-2" id="conversationList">
+            @if (Model.Conversations != null && Model.Conversations.Any())
+            {
+                foreach (var conv in Model.Conversations)
+                {
+                    var contact = conv.UserAccountId1 == Model.CurrentUserId ? conv.UserAccount2 : conv.UserAccount1;
+                    var contactName = contact?.Fullname ?? contact?.Username ?? "Unknown";
+                    var isActive = conv.ConversationId == Model.ActiveConversationId ? "bg-primary bg-opacity-10 shadow-sm" : "";
+                    var latestMessage = conv.Messages?.FirstOrDefault();
+                    
+                    <a href="?ActiveConversationId=@conv.ConversationId" class="text-decoration-none text-dark">
+                        <div class="d-flex align-items-center p-2 rounded-3 mb-1 chat-item-hover transition-all @isActive">
+                            @if (!string.IsNullOrEmpty(contact?.AvatarUrl))
+                            {
+                                <img src="@contact.AvatarUrl" class="rounded-circle shadow-sm me-3 bg-white" style="width: 48px; height: 48px; object-fit: cover; border: 2px solid white;">
+                            }
+                            else
+                            {
+                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm me-3" style="width: 48px; height: 48px; font-weight: bold; border: 2px solid white; flex-shrink: 0;">
+                                    @GetInitials(contactName)
+                                </div>
+                            }
+                            <div class="flex-grow-1 overflow-hidden">
+                                <div class="d-flex justify-content-between align-items-baseline mb-1">
+                                    <h6 class="mb-0 fw-bold text-truncate" style="max-width: 70%;">@contactName</h6>
+                                    @if (latestMessage != null)
+                                    {
+                                        <small class="text-muted" style="font-size: 0.75rem;">@latestMessage.CreatedAt.ToLocalTime().ToString("MMM dd")</small>
+                                    }
+                                </div>
+                                <div class="d-flex text-muted small text-truncate align-items-center">
+                                    @if (latestMessage != null)
+                                    {
+                                        var prefix = latestMessage.SenderId == Model.CurrentUserId ? "You: " : "";
+                                        var preview = latestMessage.Type switch
+                                        {
+                                            SmsRazor.DAL.Entities.MessageType.File => "sent a file.",
+                                            SmsRazor.DAL.Entities.MessageType.Sticker => "sent a sticker.",
+                                            _ => latestMessage.Content
+                                        };
+                                        <span class="text-truncate" style="max-width: 90%;">@prefix@preview</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Say hello!</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                }
+            }
+            else
+            {
+                <div class="text-center p-4 text-muted">
+                    <i class="fa-regular fa-message fa-3x mb-3 text-black-50 opacity-50"></i>
+                    <p>No conversations yet.</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Main Chat Window -->
+    <div class="col-md-8 col-lg-9 d-flex flex-column h-100 bg-light">
+        @if (Model.ActiveConversationId.HasValue && Model.ActiveContact != null)
+        {
+            var headerName = Model.ActiveContact.Fullname ?? Model.ActiveContact.Username ?? "Unknown Contact";
+
+            <!-- Chat Header -->
+            <div class="d-flex align-items-center p-3 bg-white border-bottom shadow-sm z-index-1">
+                @if (!string.IsNullOrEmpty(Model.ActiveContact.AvatarUrl))
+                {
+                    <img src="@Model.ActiveContact.AvatarUrl" class="rounded-circle me-3 bg-white" style="width: 42px; height: 42px; object-fit: cover;">
+                }
+                else
+                {
+                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3 shadow-sm" style="width: 42px; height: 42px; font-weight: bold; flex-shrink: 0;">
+                        @GetInitials(headerName)
+                    </div>
+                }
+                <div>
+                    <h6 class="mb-0 fw-bold">@headerName</h6>
+                    <span class="text-success small d-flex align-items-center"><i class="fa-solid fa-circle text-success me-1" style="font-size: 0.5rem;"></i> Active now</span>
+                </div>
+            </div>
+
+            <!-- Messages List -->
+            <div class="flex-grow-1 overflow-auto p-4 d-flex flex-column gap-3 chat-messages-container" id="messagesList" style="background-image: url('https://www.transparenttextures.com/patterns/always-grey.png');">
+                @foreach (var msg in Model.ActiveMessages)
+                {
+                    var isMine = msg.SenderId == Model.CurrentUserId;
+                    var bubbleClass = isMine ? "bg-primary text-white ms-auto shadow-sm" : "bg-white text-dark me-auto border shadow-sm";
+                    var alignmentClass = isMine ? "align-items-end" : "align-items-start";
+
+                    <div class="d-flex flex-column @alignmentClass mw-75 mb-2" id="msg-@msg.MessageId">
+                        <div class="d-flex align-items-center @(isMine ? "flex-row-reverse" : "flex-row") gap-2">
+                            @if (msg.Type == SmsRazor.DAL.Entities.MessageType.Text)
+                            {
+                                <div class="p-3 py-2 rounded-4 @bubbleClass text-wrap text-break msg-content" style="max-width: fit-content;">
+                                    @if (msg.IsDeleted)
+                                    {
+                                        <em class="opacity-75"><i class="fa-solid fa-ban me-1"></i>This message was deleted</em>
+                                    }
+                                    else
+                                    {
+                                        <span class="msg-text">@msg.Content</span>
+                                        if (msg.IsEdited)
+                                        {
+                                            <small class="ms-1 fw-light" style="font-size: 0.65rem;">(edited)</small>
+                                        }
+                                    }
+                                </div>
+                            }
+                            else if (msg.Type == SmsRazor.DAL.Entities.MessageType.File)
+                            {
+                                <div class="p-2 rounded-4 @bubbleClass" style="max-width: fit-content;">
+                                    @if (msg.IsDeleted)
+                                    {
+                                        <em class="opacity-75"><i class="fa-solid fa-ban me-1"></i>This file was deleted</em>
+                                    }
+                                    else
+                                    {
+                                        if (msg.FileName != null && (msg.FileName.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) || msg.FileName.EndsWith(".png", StringComparison.OrdinalIgnoreCase) || msg.FileName.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase)))
+                                        {
+                                            <a href="@msg.Content" target="_blank">
+                                                <img src="@msg.Content" class="img-fluid rounded-3" style="max-height: 200px;" alt="Attached Image" />
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <a href="@msg.Content" target="_blank" class="@(isMine ? "text-white" : "text-primary") text-decoration-none d-flex align-items-center gap-2 p-1">
+                                                <i class="fa-solid fa-file-arrow-down fa-2x"></i>
+                                                <div>
+                                                    <div class="fw-bold small">@(msg.FileName ?? "Download File")</div>
+                                                </div>
+                                            </a>
+                                        }
+                                    }
+                                </div>
+                            }
+
+                            <!-- Actions Dropdown -->
+                            @if (isMine && !msg.IsDeleted)
+                            {
+                                <div class="dropdown">
+                                    <button class="btn btn-link text-muted p-0 ms-1 opacity-50 shadow-none border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="outline: none;">
+                                        <i class="fa-solid fa-ellipsis-vertical fs-6"></i>
+                                    </button>
+                                    <ul class="dropdown-menu shadow-sm border-0 fs-7" style="min-width: 120px;">
+                                        <li>
+                                            <a class="dropdown-item py-2" href="javascript:void(0)" onclick="editMessage('@msg.MessageId')">
+                                                <i class="fa-solid fa-pen text-secondary me-2"></i>Edit
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item py-2 text-danger" href="javascript:void(0)" onclick="deleteMessage('@msg.MessageId')">
+                                                <i class="fa-solid fa-trash me-2"></i>Delete
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            }
+                        </div>
+                        <small class="text-muted mt-1" style="font-size: 0.65rem;">@msg.CreatedAt.ToLocalTime().ToString("t")</small>
+                    </div>
+                }
+            </div>
+
+            <!-- Chat Input Footer -->
+            <div class="p-3 bg-white border-top">
+                <form id="chatForm" class="d-flex align-items-end gap-2 p-1 rounded-pill bg-light border ps-3 pe-2 py-2">
+                    <input type="hidden" id="conversationIdInput" value="@Model.ActiveConversationId" />
+                    <input type="hidden" id="receiverIdInput" value="@Model.ActiveContact.AccountId" />
+                    <input type="hidden" id="currentUserIdInput" value="@Model.CurrentUserId" />
+
+                    <!-- File Upload Button -->
+                    <label class="btn btn-light rounded-circle d-flex align-items-center justify-content-center p-0 text-secondary hover-primary transition-all flex-shrink-0" style="width: 38px; height: 38px; cursor: pointer;">
+                        <i class="fa-solid fa-paperclip"></i>
+                        <input type="file" id="fileInput" class="d-none" />
+                    </label>
+
+                    <!-- Emoji Picker Button -->
+                    <button type="button" id="emojiBtn" class="btn btn-light rounded-circle d-flex align-items-center justify-content-center p-0 text-secondary hover-warning transition-all flex-shrink-0 position-relative" style="width: 38px; height: 38px;">
+                        <i class="fa-regular fa-face-smile"></i>
+                    </button>
+
+                    <!-- Text Input -->
+                    <textarea id="messageInput" class="form-control border-0 bg-transparent shadow-none resize-none pt-2" style="max-height: 100px; line-height: 1.2;" rows="1" placeholder="Aa" required></textarea>
+                    
+                    <!-- Send Button -->
+                    <button type="submit" class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center p-0 flex-shrink-0 shadow-sm transition-all" style="width: 38px; height: 38px;">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </form>
+                
+                <!-- File Preview Container (hidden by default) -->
+                <div id="filePreviewContainer" class="d-none mt-2 ps-2">
+                    <span class="badge bg-secondary rounded-pill d-inline-flex align-items-center gap-2 px-3 py-2">
+                        <i class="fa-solid fa-file text-white"></i>
+                        <span id="fileNamePreview" class="fw-normal"></span>
+                        <button type="button" class="btn-close btn-close-white" style="font-size: 0.5rem;" id="clearFileBtn"></button>
+                    </span>
+                </div>
+            </div>
+        }
+        else
+        {
+            <!-- Empty State -->
+            <div class="h-100 d-flex flex-column align-items-center justify-content-center text-muted">
+                <div class="bg-white p-4 rounded-circle shadow-sm mb-3">
+                    <i class="fa-regular fa-paper-plane fa-3x text-primary opacity-75"></i>
+                </div>
+                <h4 class="fw-bold text-dark">Your Messages</h4>
+                <p>Select a contact from the sidebar to start chatting.</p>
+                <button class="btn btn-primary rounded-pill px-4 mt-2" data-bs-toggle="modal" data-bs-target="#newChatModal">Start a new chat</button>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- New Chat Modal -->
+<div class="modal fade" id="newChatModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <div class="modal-header border-bottom-0 pb-0">
+        <h5 class="modal-title fw-bold">New message</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+          <input type="text" class="form-control mb-3 rounded-pill bg-light border-0 px-4" placeholder="Search contacts..." id="contactSearch">
+          <div class="list-group list-group-flush" id="contactsList">
+              @foreach (var contact in Model.AvailableContacts)
+              {
+                  var name = contact.Fullname ?? contact.Username;
+                  <a href="?NewContactId=@contact.AccountId" class="list-group-item list-group-item-action border-0 d-flex align-items-center py-3 rounded-3 mb-1 hover-bg-light transition-all">
+                      @if (!string.IsNullOrEmpty(contact.AvatarUrl))
+                      {
+                          <img src="@contact.AvatarUrl" class="rounded-circle me-3 bg-white" style="width: 40px; height: 40px; object-fit: cover;">
+                      }
+                      else
+                      {
+                          <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3 shadow-sm" style="width: 40px; height: 40px; font-weight: bold; flex-shrink: 0;">
+                              @GetInitials(name)
+                          </div>
+                      }
+                      <div>
+                          <h6 class="mb-0 fw-bold">@name</h6>
+                          <small class="text-muted">@contact.Email</small>
+                      </div>
+                  </a>
+              }
+          </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+@section Styles {
+    <style>
+        .chat-item-hover:hover { background-color: rgba(0,0,0,0.03); cursor: pointer; }
+        .hover-bg-light:hover { background-color: #f8f9fa; }
+        .transition-all { transition: all 0.2s ease-in-out; }
+        .hover-primary:hover { color: var(--bs-primary) !important; background-color: rgba(13, 110, 253, 0.1) !important; }
+        .resize-none { resize: none; }
+        .z-index-1 { z-index: 1; }
+        /* Hide scrollbar for messages but keep functionality */
+        .chat-messages-container::-webkit-scrollbar { width: 6px; }
+        .chat-messages-container::-webkit-scrollbar-track { background: transparent; }
+        .chat-messages-container::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
+        .chat-messages-container::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
+    </style>
+}
+
+@section Scripts {
+    <!-- SignalR Client Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
+    
+    <!-- Emoji Picker Library (Picmo) -->
+    <script src="https://unpkg.com/@@picmo/picmo@latest/dist/umd/picmo.js"></script>
+    <script src="https://unpkg.com/@@picmo/popup-picker@latest/dist/umd/picmo-popup.js"></script>
+    
+    <script src="~/js/chat.js" asp-append-version="true"></script>
+    <script>
+        // Scroll to bottom of chat on load
+        document.addEventListener("DOMContentLoaded", function() {
+            var msgList = document.getElementById("messagesList");
+            if (msgList) {
+                msgList.scrollTop = msgList.scrollHeight;
+            }
+        });
+    </script>
+}

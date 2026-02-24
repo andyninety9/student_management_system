@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Student Portal</title>
+    <title>@ViewData["Title"] - Teacher Portal</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
@@ -16,48 +16,36 @@
 <body>
     <nav class="navbar navbar-expand-lg student-navbar sticky-top border-bottom">
         <div class="container">
-            <a class="navbar-brand student-brand" href="/Student/Index">
+            <a class="navbar-brand student-brand" href="/Teacher/Index">
                 <img src="~/images/logo-FPT-1x1.jpg" alt="Logo" width="32" height="32" class="d-inline-block align-text-top rounded-circle me-2 border">
-                Student <span class="fw-light ms-1">Portal</span>
+                Teacher <span class="fw-light ms-1">Portal</span>
             </a>
             
-            <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-toggle="target="#studentNavbar">
+            <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#teacherNavbar">
                 <span class="navbar-toggler-icon"></span>
             </button>
             
-            <div class="collapse navbar-collapse" id="studentNavbar">
+            <div class="collapse navbar-collapse" id="teacherNavbar">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-4 gap-2">
                     <li class="nav-item">
-                        <a class="student-nav-link @(Context.Request.Path.Value == "/Student/Index" ? "active" : "")" href="/Student/Index">Dashboard</a>
+                        <a class="student-nav-link @(Context.Request.Path.Value == "/Teacher/Index" ? "active" : "")" href="/Teacher/Index">Dashboard</a>
                     </li>
                     <li class="nav-item">
-                        <a class="student-nav-link @(Context.Request.Path.Value?.StartsWith("/Student/Registration") == true ? "active" : "")" href="/Student/Registration">Register Classes</a>
+                        <a class="student-nav-link @(Context.Request.Path.Value?.StartsWith("/Teacher/Classes") == true ? "active" : "")" href="#">My Classes</a>
                     </li>
                     <li class="nav-item">
-                        <a class="student-nav-link" href="#">Grades</a>
+                        <a class="student-nav-link text-primary @(Context.Request.Path.Value?.StartsWith("/Chat") == true ? "active" : "")" href="/Chat">
+                            <i class="fa-regular fa-message me-1"></i> Messages
+                        </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="student-nav-link @(Context.Request.Path.Value?.StartsWith("/Student/Attendance") == true ? "active" : "")" href="/Student/Attendance">Attendance</a>
-                    </li>
-                    <li class="nav-item">
-                    <a class="student-nav-link @(Context.Request.Path.Value?.StartsWith("/Student/Timetable") == true ? "active" : "")" href="/Student/Timetable">Schedule</a>
-                </li>
-                <li class="nav-item">
-                    <a class="student-nav-link @(Context.Request.Path.Value?.StartsWith("/Student/Tuition") == true ? "active" : "")" href="/Student/Tuition">Tuition Fees</a>
-                </li>
-                <li class="nav-item">
-                    <a class="student-nav-link text-primary @(Context.Request.Path.Value?.StartsWith("/Chat") == true ? "active" : "")" href="/Chat">
-                        <i class="fa-regular fa-message me-1"></i> Messages
-                    </a>
-                </li>
-            </ul>
+                </ul>
                 
                 @{
-                    var studentName = User.Identity?.Name ?? "Student Name";
-                    var initials = "ST";
-                    if (!string.IsNullOrEmpty(studentName))
+                    var teacherName = User.Identity?.Name ?? "Teacher Name";
+                    var initials = "TC";
+                    if (!string.IsNullOrEmpty(teacherName))
                     {
-                        var parts = studentName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        var parts = teacherName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                         if (parts.Length >= 2)
                         {
                             initials = $"{parts[0][0]}{parts[^1][0]}".ToUpper();
@@ -71,13 +59,13 @@
                 <div class="d-flex align-items-center">
                     <div class="dropdown">
                         <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle text-dark" id="dropdownUser" data-bs-toggle="dropdown">
-                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 36px; height: 36px; font-weight: 600;">
+                            <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 36px; height: 36px; font-weight: 600;">
                                 @initials
                             </div>
-                            <span class="fw-medium">@studentName</span>
+                            <span class="fw-medium">@teacherName</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2" aria-labelledby="dropdownUser">
-                            <li><a class="dropdown-item py-2" href="/Student/Profile"><i class="fa-regular fa-user me-2 opacity-50"></i> Profile</a></li>
+                            <li><a class="dropdown-item py-2" href="#"><i class="fa-regular fa-user me-2 opacity-50"></i> Profile</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <a href="/Auth/Logout" class="dropdown-item text-danger py-2">
@@ -91,7 +79,7 @@
         </div>
     </nav>
 
-    <main class="student-main container">
+    <main class="student-main container mt-4">
         @RenderBody()
     </main>
 
@@ -103,7 +91,6 @@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

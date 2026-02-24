@@ -28,6 +28,7 @@
                         <th class="ps-4 text-uppercase text-secondary small fw-semibold">Course Name (EN)</th>
                         <th class="text-uppercase text-secondary small fw-semibold">Course Name (VI)</th>
                         <th class="text-uppercase text-secondary small fw-semibold text-center">Credits</th>
+                        <th class="text-uppercase text-secondary small fw-semibold text-end">Tuition Fee (VND)</th>
                         <th class="text-uppercase text-secondary small fw-semibold text-center">Status</th>
                         <th class="pe-4 text-uppercase text-secondary small fw-semibold text-end">Actions</th>
                     </tr>
@@ -53,6 +54,9 @@
                                 <td>@course.CourseNameVI</td>
                                 <td class="text-center">
                                     <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-2">@course.CreditNumber</span>
+                                </td>
+                                <td class="text-end fw-medium text-dark">
+                                    @course.TuitionFee.ToString("N0")
                                 </td>
                                 <td class="text-center">
                                     @if (course.IsActive)

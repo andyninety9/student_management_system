@@ -22,6 +22,11 @@ public class CourseDTO
     [Display(Name = "Credits")]
     public int CreditNumber { get; set; }
 
+    [Required]
+    [Range(0, 100000000, ErrorMessage = "Tuition Fee must be a positive value.")]
+    [Display(Name = "Tuition Fee")]
+    public decimal TuitionFee { get; set; }
+
     [Display(Name = "Active")]
     public bool IsActive { get; set; } = true;
 

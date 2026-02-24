@@ -14,8 +14,22 @@ else
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Increase Kestrel Max Request Body Size for 500MB uploads
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = 524_288_000;
+});
+
 // Add services to the container.
+builder.Services.AddControllers();
 builder.Services.AddRazorPages();
+builder.Services.AddSignalR();
+
+// Increase Multipart Body Length for 500MB file uploads
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 524_288_000;
+});
 builder.Services.AddAuthentication("JwtCookie")
     .AddJwtBearer("JwtCookie", options =>
     {
@@ -62,6 +76,8 @@ app.UseAuthorization();
 app.MapStaticAssets();
 app.MapRazorPages()
    .WithStaticAssets();
+app.MapControllers();
+app.MapHub<SmsRazor.BLL.Hubs.ChatHub>("/chatHub");
 
 using (var scope = app.Services.CreateScope())
 {

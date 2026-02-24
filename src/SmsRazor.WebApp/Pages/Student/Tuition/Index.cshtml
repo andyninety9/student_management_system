@@ -1,0 +1,144 @@
+@page
+@model SmsRazor.WebApp.Pages.Student.Tuition.IndexModel
+@{
+    Layout = "_StudentLayout";
+    ViewData["Title"] = "Tuition Payment";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+    <div>
+        <h2 class="h3 mb-1 fw-bold text-dark">Tuition & Fees</h2>
+        <p class="text-muted mb-0">Review your registered courses and pay your tuition securely.</p>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger" role="alert">
+        @Model.ErrorMessage
+    </div>
+}
+
+<div class="card shadow-sm border-0 rounded-4 mb-4">
+    <div class="card-body p-4">
+        <form method="get" class="row gx-3 gy-2 align-items-center">
+            <div class="col-sm-4">
+                <select class="form-select border-primary" asp-for="SelectedTermId" asp-items="Model.TermsList" onchange="this.form.submit()">
+                    <option value="">-- Select Active Term --</option>
+                </select>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (Model.SelectedTermId != Guid.Empty && Model.Summary.Courses != null)
+{
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-bottom p-4">
+                    <h5 class="mb-0 fw-bold">Fee Breakdown</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-4 text-uppercase text-secondary small fw-semibold">Course Name</th>
+                                    <th class="text-uppercase text-secondary small fw-semibold text-center">Credits</th>
+                                    <th class="pe-4 text-uppercase text-secondary small fw-semibold text-end">Fee (VND)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (!Model.Summary.Courses.Any())
+                                {
+                                    <tr>
+                                        <td colspan="3" class="text-center py-5 text-muted">
+                                            <i class="fa-regular fa-folder-open fa-2x mb-3 d-block text-black-50"></i>
+                                            You have no registered courses for this term.
+                                        </td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    foreach (var course in Model.Summary.Courses)
+                                    {
+                                        <tr>
+                                            <td class="ps-4 fw-medium text-dark">@course.CourseName</td>
+                                            <td class="text-center">
+                                                <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-2">@course.Credits</span>
+                                            </td>
+                                            <td class="pe-4 text-end fw-medium">
+                                                @course.TuitionFee.ToString("N0")
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                            @if (Model.Summary.Courses.Any())
+                            {
+                                <tfoot class="bg-light border-top">
+                                    <tr>
+                                        <td colspan="2" class="ps-4 fw-bold text-end">Total Tuition Fee</td>
+                                        <td class="pe-4 fw-bold text-end text-primary fs-5">@Model.Summary.TotalAmount.ToString("N0")</td>
+                                    </tr>
+                                </tfoot>
+                            }
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-bottom p-4">
+                    <h5 class="mb-0 fw-bold">Payment Summary</h5>
+                </div>
+                <div class="card-body p-4 text-center d-flex flex-column justify-content-center">
+                    @if (Model.Summary.TotalAmount == 0)
+                    {
+                        <div class="text-muted">
+                            <i class="fa-solid fa-check-circle fa-4x text-success bg-opacity-10 rounded-circle p-3 mb-3"></i>
+                            <h4 class="fw-bold">No Due Balance</h4>
+                            <p>You have no pending tuition fee for this selected term.</p>
+                        </div>
+                    }
+                    else if (Model.Summary.RemainingBalance == 0)
+                    {
+                        <div class="text-success">
+                            <i class="fa-solid fa-file-invoice-dollar fa-4x text-success bg-opacity-10 rounded-circle p-3 mb-3"></i>
+                            <h4 class="fw-bold">Fully Paid</h4>
+                            <p class="mb-1 text-muted">Total Paid: @Model.Summary.TotalPaidAmount.ToString("N0") VND</p>
+                            <p class="mb-0 text-muted small">Latest Payment: @Model.Summary.PaidAt?.ToString("dd/MM/yyyy HH:mm")</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-warning">
+                            <i class="fa-solid fa-clock fa-4x text-warning bg-opacity-10 rounded-circle p-3 mb-3"></i>
+                            <h4 class="fw-bold text-dark">Payment Required</h4>
+                            @if (Model.Summary.TotalPaidAmount > 0)
+                            {
+                                <p class="mb-1 text-success">Already Paid: <span class="fw-bold">@Model.Summary.TotalPaidAmount.ToString("N0") VND</span></p>
+                            }
+                            <p class="mb-4 text-muted">Remaining Balance: <span class="fw-bold text-danger">@Model.Summary.RemainingBalance.ToString("N0") VND</span></p>
+                            
+                            <form method="post" asp-page-handler="Pay">
+                                <input type="hidden" name="termId" value="@Model.SelectedTermId" />
+                                <input type="hidden" name="amount" value="@Math.Round(Model.Summary.RemainingBalance)" />
+                                <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill fw-bold shadow-sm d-flex justify-content-center align-items-center gap-2">
+                                    <i class="fa-solid fa-credit-card"></i> Pay with VNPay
+                                </button>
+                            </form>
+                            @if (Model.Summary.PaymentStatus == SmsRazor.DAL.Entities.PaymentStatus.Failed)
+                            {
+                                <p class="text-danger mt-3 small fw-medium"><i class="fa-solid fa-triangle-exclamation me-1"></i> Your previous payment attempt failed. Please try again.</p>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}

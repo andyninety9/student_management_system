@@ -28,6 +28,12 @@ public class SmsDbContext : DbContext
     public DbSet<Section> Sections { get; set; }
     public DbSet<AcademicCalendar> AcademicCalendars { get; set; }
     public DbSet<Enrollment> Enrollments { get; set; }
+    public DbSet<Attendance> Attendances { get; set; }
+    public DbSet<TuitionPayment> TuitionPayments { get; set; }
+    
+    // Chat System
+    public DbSet<Conversation> Conversations { get; set; }
+    public DbSet<Message> Messages { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -79,6 +85,23 @@ public class SmsDbContext : DbContext
             .WithMany()
             .HasForeignKey(e => e.SectionId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Attendance rules
+        modelBuilder.Entity<Attendance>()
+            .HasIndex(a => new { a.StudentCode, a.AcademicCalendarId })
+            .IsUnique(); // Prevent duplicate attendance tracking per calendar slot
+
+        modelBuilder.Entity<Attendance>()
+            .HasOne(a => a.Student)
+            .WithMany()
+            .HasForeignKey(a => a.StudentCode)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Attendance>()
+            .HasOne(a => a.Calendar)
+            .WithMany()
+            .HasForeignKey(a => a.AcademicCalendarId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
