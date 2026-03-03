@@ -1,0 +1,59 @@
+@page
+@model SmsRazor.WebApp.Pages.Student.AIAssistantModel
+@{
+    ViewData["Title"] = "AI Assistant";
+    Layout = "_StudentLayout";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/student/ai-assistant.css" asp-append-version="true" />
+}
+
+<div class="row h-100 g-0">
+    <div class="col-12 h-100 d-flex flex-column bg-white rounded-3 shadow-sm overflow-hidden" style="height: calc(100vh - 160px) !important;">
+        
+        <!-- Chat Header -->
+        <div class="chat-header p-3 border-bottom bg-light d-flex align-items-center">
+            <div class="ai-avatar me-3 bg-white text-success rounded-circle shadow-sm d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 24px;">
+                <i class="fa-solid fa-robot"></i>
+            </div>
+            <div>
+                <h5 class="m-0 fw-bold">Student AI Assistant</h5>
+                <small class="text-success"><i class="fa-solid fa-circle me-1" style="font-size: 8px;"></i>Online</small>
+            </div>
+        </div>
+
+        <!-- Chat Messages Area -->
+        <div id="aiChatMessages" class="chat-messages p-4 flex-grow-1 overflow-auto d-flex flex-column gap-3" style="background-color: #f8f9fa;">
+            <div class="chat-message ai-message d-flex">
+                <div class="message-content bg-white border p-3 rounded-4 shadow-sm" style="max-width: 80%; border-bottom-left-radius: 4px !important;">
+                    <div class="markdown-body">Hello! I am your AI Assistant. How can I help you today?</div>
+                    <div class="message-time mt-1 text-muted small text-end" style="font-size: 11px;">Just now</div>
+                </div>
+            </div>
+            <!-- Dynamic Messages will be appended here -->
+        </div>
+
+        <!-- Chat Input Area -->
+        <div class="chat-input-area border-top p-3 bg-white">
+            <div class="input-group align-items-end rounded-pill bg-light border p-2 shadow-sm transition-all focus-ring">
+                <textarea id="aiMessageInput" class="form-control border-0 bg-transparent resize-none py-2 px-3 focus-ring-none shadow-none" 
+                          placeholder="Type your question..." rows="1" style="max-height: 120px; outline: none; box-shadow: none;"></textarea>
+                <button id="aiSendButton" class="btn btn-success rounded-circle d-flex align-items-center justify-content-center shadow ms-2" style="width: 42px; height: 42px;" disabled>
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+            <div class="text-center mt-2 d-none" id="aiTypingIndicator">
+                <small class="text-muted"><i class="fa-solid fa-robot me-1 text-success"></i>AI is typing<span class="typing-dots">...</span></small>
+            </div>
+        </div>
+        
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Markdown parsed for better formatting -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <script src="~/js/student/ai-assistant.js" asp-append-version="true"></script>
+}

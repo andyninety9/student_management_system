@@ -123,7 +123,7 @@ public class EnrollmentService : IEnrollmentService
                 CourseName = e.Section.Course != null ? e.Section.Course.CourseNameEng : "",
                 Credits = e.Section.Course != null ? e.Section.Course.CreditNumber : 0,
                 TeacherName = e.Section.TeacherAssignment != null && e.Section.TeacherAssignment.TeacherInfo != null && e.Section.TeacherAssignment.TeacherInfo.Account != null
-                        ? e.Section.TeacherAssignment.TeacherInfo.Account.Fullname : "TBA",
+                        ? e.Section.TeacherAssignment.TeacherInfo.Account.Fullname ?? "TBA" : "TBA",
                 EnrollmentDate = e.EnrollmentDate
             })
             .ToListAsync();

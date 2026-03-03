@@ -90,8 +90,10 @@ public class TuitionService : ITuitionService
         vnpay.AddRequestData("vnp_TmnCode", tmnCode);
         vnpay.AddRequestData("vnp_Amount", (amount * 100).ToString("0")); // Amount must be multiplied by 100
         
-        vnpay.AddRequestData("vnp_CreateDate", DateTime.Now.ToString("yyyyMMddHHmmss"));
-        vnpay.AddRequestData("vnp_ExpireDate", DateTime.Now.AddMinutes(15).ToString("yyyyMMddHHmmss"));
+        // VNPay requires time in GMT+7 strictly
+        var vnpayTime = DateTime.UtcNow.AddHours(7);
+        vnpay.AddRequestData("vnp_CreateDate", vnpayTime.ToString("yyyyMMddHHmmss"));
+        vnpay.AddRequestData("vnp_ExpireDate", vnpayTime.AddMinutes(15).ToString("yyyyMMddHHmmss"));
         vnpay.AddRequestData("vnp_CurrCode", config["VnPay:CurrCode"] ?? "VND");
         vnpay.AddRequestData("vnp_IpAddr", ipAddress);
         vnpay.AddRequestData("vnp_Locale", config["VnPay:Locale"] ?? "vn");

@@ -22,8 +22,8 @@ public class AttendanceService : IAttendanceService
         var today = DateTime.UtcNow.Date;
 
         var upcomingClasses = await _context.Enrollments
-            .Where(e => e.StudentCode == studentCode && e.Section.Status == true)
-            .SelectMany(e => e.Section.Calendars)
+            .Where(e => e.StudentCode == studentCode && e.Section!.Status == true)
+            .SelectMany(e => e.Section!.Calendars)
             .Where(c => c.StudyDate >= today)
             .OrderBy(c => c.StudyDate)
             .ThenBy(c => c.Slot)
@@ -53,7 +53,7 @@ public class AttendanceService : IAttendanceService
             .Include(e => e.Section!)
             .ThenInclude(s => s.Course)
             .Include(e => e.Section!.TeacherAssignment)
-            .ThenInclude(ta => ta.TeacherInfo)
+            .ThenInclude(ta => ta!.TeacherInfo)
             .ThenInclude(ti => ti!.Account)
             .Include(e => e.Section!.Calendars.Where(c => c.TermId == termId))
             .Where(e => e.StudentCode == studentCode && e.Section!.Calendars.Any(c => c.TermId == termId))

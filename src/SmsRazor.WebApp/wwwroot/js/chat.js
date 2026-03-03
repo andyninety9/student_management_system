@@ -20,30 +20,31 @@ document.addEventListener("DOMContentLoaded", function () {
     const emojiBtn = document.getElementById("emojiBtn");
 
     // Initialize Emoji Picker
-    if (emojiBtn && window.picmoPopup) {
-        const picker = picmoPopup.createPopup({
-            rootElement: document.body,
-        }, {
-            triggerElement: emojiBtn,
-            referenceElement: emojiBtn,
-            position: 'top-start'
-        });
-
+    const picker = document.querySelector('emoji-picker');
+    if (emojiBtn && picker) {
         // Toggle picking overlay
-        emojiBtn.addEventListener('click', () => {
-            picker.toggle();
+        emojiBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            picker.classList.toggle('d-none');
         });
 
         // Insert Emoji to Input at Cursor
-        picker.addEventListener('emoji:select', selection => {
+        picker.addEventListener('emoji-click', event => {
             const start = messageInput.selectionStart;
             const end = messageInput.selectionEnd;
             const text = messageInput.value;
-            messageInput.value = text.substring(0, start) + selection.emoji + text.substring(end);
+            messageInput.value = text.substring(0, start) + event.detail.unicode + text.substring(end);
 
             // Move cursor past the emoji
-            messageInput.selectionStart = messageInput.selectionEnd = start + selection.emoji.length;
+            messageInput.selectionStart = messageInput.selectionEnd = start + event.detail.unicode.length;
             messageInput.focus();
+        });
+
+        // Click outside to hide
+        document.addEventListener('click', (e) => {
+            if (!picker.contains(e.target) && !emojiBtn.contains(e.target)) {
+                picker.classList.add('d-none');
+            }
         });
     }
 
@@ -100,11 +101,51 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
+    // Handle User Typing indicator
+    const typingIndicator = document.getElementById("typingIndicator");
+    let typingTimeout;
+
+    connection.on("UserTyping", function (data) {
+        // Only show if the typing event is from the active conversation and NOT from ourselves
+        if (data.conversationId === conversationId && data.userId !== currentUserId) {
+            if (data.isTyping) {
+                typingIndicator.classList.remove("d-none");
+                typingIndicator.classList.add("d-flex");
+
+                // Auto-scroll so they see the indicator
+                messagesList.scrollTop = messagesList.scrollHeight;
+            } else {
+                typingIndicator.classList.add("d-none");
+                typingIndicator.classList.remove("d-flex");
+            }
+        }
+    });
+
+    // Broadcast our own typing status
+    let isTyping = false;
+    messageInput.addEventListener("input", function () {
+        if (!isTyping) {
+            isTyping = true;
+            connection.invoke("NotifyTyping", conversationId, true).catch(err => console.error(err));
+        }
+
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => {
+            isTyping = false;
+            connection.invoke("NotifyTyping", conversationId, false).catch(err => console.error(err));
+        }, 2000);
+    });
+
     // Handle Enter key to submit
     messageInput.addEventListener("keydown", function (e) {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
             chatForm.dispatchEvent(new Event("submit"));
+
+            // Immediately kill the typing indicator when sent
+            isTyping = false;
+            clearTimeout(typingTimeout);
+            connection.invoke("NotifyTyping", conversationId, false).catch(err => console.error(err));
         }
     });
 
@@ -125,7 +166,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // Form Submit Handler
-    chatForm.addEventListener("submit", async function (e) {
+    chatForm.addEventListener("submit", function (e) {
         e.preventDefault();
 
         const content = messageInput.value.trim();
@@ -133,51 +174,104 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (!content && !file) return;
 
-        let messageType = 0; // Text
-        let fileUrl = null;
-        let finalContent = content;
-        let fileName = null;
-
-        // If there's a file, we need to upload it first via a standard API endpoint
-        if (file) {
-            messageType = 1; // File
-            fileName = file.name;
-
-            const formData = new FormData();
-            formData.append("file", file);
-
-            try {
-                // We need an API endpoint to physically upload to Blob Storage and return the URL
-                const response = await fetch('/api/ChatFile/Upload', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (response.ok) {
-                    const result = await response.json();
-                    fileUrl = result.fileUrl; // Blob Storage URL
-                    finalContent = fileUrl; // For file types, content is the URL
-                } else {
-                    alert("Failed to upload file.");
-                    return;
-                }
-            } catch (error) {
-                console.error("File upload error:", error);
-                alert("Error connecting to upload service.");
-                return;
-            }
-        }
-
-        // Send via SignalR
-        connection.invoke("SendMessage", receiverId, finalContent, messageType, fileName)
-            .catch(function (err) {
-                return console.error("Send message error: ", err.toString());
-            });
-
-        // Clear UI
+        // Immediately clear UI to not block the user
         messageInput.value = "";
         clearFileSelection();
+
+        if (file) {
+            handleFileUploadAsync(content, file);
+        } else {
+            // Send text immediately
+            connection.invoke("SendMessage", receiverId, content, 0, null)
+                .catch(err => console.error("Send text error: ", err.toString()));
+        }
     });
+
+    async function handleFileUploadAsync(textCaption, file) {
+        const tempMsgId = "temp-" + Date.now();
+        const fileName = file.name;
+
+        // 1. Inject Temporary Loading Bubble immediately
+        appendTempFileMessage(tempMsgId, fileName);
+
+        let fileUrl = null;
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            // 2. Perform Async Blob Upload in background
+            const response = await fetch('/api/ChatFile/Upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                fileUrl = result.fileUrl;
+            } else {
+                removeTempMessage(tempMsgId);
+                Swal.fire("Upload Failed", "The server rejected the file.", "error");
+                return;
+            }
+        } catch (error) {
+            console.error("File upload error:", error);
+            removeTempMessage(tempMsgId);
+            Swal.fire("Network Error", "Failed to connect to upload service.", "error");
+            return;
+        }
+
+        // 3. Invoke SignalR with the newly returned Azure Blob link
+        // SignalR will automatically broadcast the 'ReceiveMessage' containing the link to both clients
+        // The sender will receive a 'permanent' bubble on screen from the broadcast.
+        try {
+            await connection.invoke("SendMessage", receiverId, fileUrl, 1, fileName);
+            removeTempMessage(tempMsgId); // clean up the placeholder
+
+            // If they also typed a caption during the file send, fire off a secondary text message
+            if (textCaption) {
+                await connection.invoke("SendMessage", receiverId, textCaption, 0, null);
+            }
+        } catch (err) {
+            console.error("Send file-message error: ", err.toString());
+            removeTempMessage(tempMsgId);
+        }
+    }
+
+    function removeTempMessage(tempId) {
+        const msgDiv = document.getElementById(`msg-${tempId}`);
+        if (msgDiv) msgDiv.remove();
+    }
+
+    function appendTempFileMessage(tempId, fileName) {
+        const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const bubbleClass = "bg-primary text-white ms-auto shadow-sm";
+        const alignmentClass = "align-items-end";
+        const flexRowClass = "flex-row-reverse";
+
+        let contentHtml = `
+            <div class="p-2 rounded-4 ${bubbleClass} msg-content opacity-75 d-flex align-items-center gap-2" style="max-width: fit-content;">
+                <div class="spinner-border spinner-border-sm text-white" role="status"></div>
+                <div class="fw-bold small">Sending ${escapeHtml(fileName)}...</div>
+            </div>`;
+
+        const msgDiv = document.createElement("div");
+        msgDiv.className = `d-flex flex-column ${alignmentClass} mw-75 mb-2`;
+        msgDiv.id = `msg-${tempId}`;
+        msgDiv.innerHTML = `
+            <div class="d-flex align-items-center ${flexRowClass} gap-2">
+                ${contentHtml}
+            </div>
+            <small class="text-muted mt-1" style="font-size: 0.65rem;">${timeString}</small>
+        `;
+
+        const typingIndicator = document.getElementById("typingIndicator");
+        if (typingIndicator) {
+            messagesList.insertBefore(msgDiv, typingIndicator);
+        } else {
+            messagesList.appendChild(msgDiv);
+        }
+        messagesList.scrollTop = messagesList.scrollHeight;
+    }
 
     function clearFileSelection() {
         fileInput.value = "";
@@ -207,12 +301,35 @@ document.addEventListener("DOMContentLoaded", function () {
         } else if (msg.type === 1) { // File
             const lowerFileName = (msg.fileName || "").toLowerCase();
             const isImage = lowerFileName.endsWith(".jpg") || lowerFileName.endsWith(".png") || lowerFileName.endsWith(".jpeg");
+            const isVideo = lowerFileName.endsWith(".mp4") || lowerFileName.endsWith(".webm") || lowerFileName.endsWith(".ogg");
+            const isPdf = lowerFileName.endsWith(".pdf");
 
             if (isImage) {
                 contentHtml = `
                     <div class="p-2 rounded-4 ${bubbleClass} msg-content" style="max-width: fit-content;">
                         <a href="${msg.content}" target="_blank">
                             <img src="${msg.content}" class="img-fluid rounded-3" style="max-height: 200px;" alt="Attached Image" />
+                        </a>
+                    </div>`;
+            } else if (isVideo) {
+                const videoExt = lowerFileName.substring(lowerFileName.lastIndexOf('.') + 1);
+                contentHtml = `
+                    <div class="p-2 rounded-4 ${bubbleClass} msg-content" style="max-width: fit-content;">
+                        <video controls style="max-width: 300px; max-height: 200px;" class="rounded-3">
+                            <source src="${msg.content}" type="video/${videoExt}">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>`;
+            } else if (isPdf) {
+                const textColorClass = isMine ? "text-white" : "text-primary";
+                contentHtml = `
+                    <div class="p-2 rounded-4 ${bubbleClass} msg-content" style="max-width: fit-content;">
+                        <a href="${msg.content}" target="_blank" class="${textColorClass} text-decoration-none d-flex align-items-center gap-2 p-1">
+                            <i class="fa-solid fa-file-pdf fa-2x text-danger"></i>
+                            <div>
+                                <div class="fw-bold small">${escapeHtml(msg.fileName)}</div>
+                                <small class="opacity-75">Click to view PDF</small>
+                            </div>
                         </a>
                     </div>`;
             } else {
@@ -254,7 +371,13 @@ document.addEventListener("DOMContentLoaded", function () {
             <small class="text-muted mt-1" style="font-size: 0.65rem;">${timeString}</small>
         `;
 
-        messagesList.appendChild(msgDiv);
+        // If the typing indicator exists and is visible, insert the message right BEFORE it
+        const typingIndicator = document.getElementById("typingIndicator");
+        if (typingIndicator) {
+            messagesList.insertBefore(msgDiv, typingIndicator);
+        } else {
+            messagesList.appendChild(msgDiv);
+        }
 
         // Auto-scroll to bottom
         messagesList.scrollTop = messagesList.scrollHeight;
@@ -276,25 +399,52 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const textSpan = msgDiv.querySelector('.msg-text');
         if (!textSpan) {
-            alert("This message cannot be edited.");
+            Swal.fire("Error", "This message cannot be edited.", "error");
             return;
         }
 
         const currentText = textSpan.textContent;
-        const newContent = prompt("Edit your message:", currentText);
 
-        if (newContent !== null && newContent.trim() !== "" && newContent !== currentText) {
-            const conversationId = document.getElementById("conversationIdInput").value;
-            connection.invoke("EditMessage", conversationId, messageId, newContent.trim())
-                .catch(err => console.error(err.toString()));
-        }
+        Swal.fire({
+            title: 'Edit Message',
+            input: 'textarea',
+            inputValue: currentText,
+            showCancelButton: true,
+            confirmButtonText: 'Save',
+            confirmButtonColor: '#0d6efd',
+            cancelButtonColor: '#6c757d',
+            inputValidator: (value) => {
+                if (!value.trim()) {
+                    return 'Message cannot be empty!';
+                }
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const newContent = result.value.trim();
+                if (newContent !== currentText) {
+                    const conversationId = document.getElementById("conversationIdInput").value;
+                    connection.invoke("EditMessage", conversationId, messageId, newContent)
+                        .catch(err => Swal.fire({ icon: 'error', title: 'Oops...', text: err.toString() }));
+                }
+            }
+        });
     };
 
     window.deleteMessage = function (messageId) {
-        if (confirm("Are you sure you want to delete this message?")) {
-            const conversationId = document.getElementById("conversationIdInput").value;
-            connection.invoke("DeleteMessage", conversationId, messageId)
-                .catch(err => console.error(err.toString()));
-        }
+        Swal.fire({
+            title: 'Delete Message?',
+            text: "This action cannot be undone!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const conversationId = document.getElementById("conversationIdInput").value;
+                connection.invoke("DeleteMessage", conversationId, messageId)
+                    .catch(err => Swal.fire({ icon: 'error', title: 'Oops...', text: err.toString() }));
+            }
+        });
     };
 });

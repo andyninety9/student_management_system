@@ -25,6 +25,7 @@ public static class DependencyInjection
         services.AddScoped<ITuitionService, TuitionService>();
         services.AddScoped<IChatService, ChatService>();
         services.AddScoped<IBlobStorageService, BlobStorageService>();
+        services.AddScoped<IAssistantService, AssistantService>();
 
         return services;
     }

@@ -73,11 +73,10 @@ app.UseRouting();
 app.UseMiddleware<SmsRazor.WebApp.Middleware.JwtCookieMiddleware>();
 
 app.UseAuthorization();
-app.MapStaticAssets();
-app.MapRazorPages()
-   .WithStaticAssets();
+app.MapRazorPages();
 app.MapControllers();
 app.MapHub<SmsRazor.BLL.Hubs.ChatHub>("/chatHub");
+app.MapHub<SmsRazor.BLL.Hubs.AssistantHub>("/assistantHub");
 
 using (var scope = app.Services.CreateScope())
 {

@@ -1,7 +1,14 @@
 @page
 @model SmsRazor.WebApp.Pages.Chat.IndexModel
 @{
-    Layout = "_StudentLayout"; // Defaulting to StudentLayout, could be tailored to claims later
+    if (User.IsInRole("Teacher"))
+    {
+        Layout = "_TeacherLayout";
+    }
+    else
+    {
+        Layout = "_StudentLayout";
+    }
     ViewData["Title"] = "Messages";
 }
 
@@ -15,7 +22,7 @@
     }
 }
 
-<div class="row g-0 vh-100" style="margin-top: -1.5rem; margin-bottom: -1.5rem; margin-left: -1.5rem; margin-right: -1.5rem;">
+<div class="row g-0 chat-container">
     <!-- Sidebar: Conversations List -->
     <div class="col-md-4 col-lg-3 border-end bg-white d-flex flex-column h-100 position-relative">
         <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-light">
@@ -153,6 +160,23 @@
                                                 <img src="@msg.Content" class="img-fluid rounded-3" style="max-height: 200px;" alt="Attached Image" />
                                             </a>
                                         }
+                                        else if (msg.FileName != null && (msg.FileName.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase) || msg.FileName.EndsWith(".webm", StringComparison.OrdinalIgnoreCase) || msg.FileName.EndsWith(".ogg", StringComparison.OrdinalIgnoreCase)))
+                                        {
+                                            <video controls style="max-width: 300px; max-height: 200px;" class="rounded-3">
+                                                <source src="@msg.Content" type="video/@(msg.FileName.Substring(msg.FileName.LastIndexOf('.')+1).ToLower())">
+                                                Your browser does not support the video tag.
+                                            </video>
+                                        }
+                                        else if (msg.FileName != null && msg.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            <a href="@msg.Content" target="_blank" class="@(isMine ? "text-white" : "text-primary") text-decoration-none d-flex align-items-center gap-2 p-1">
+                                                <i class="fa-solid fa-file-pdf fa-2x text-danger"></i>
+                                                <div>
+                                                    <div class="fw-bold small">@(msg.FileName)</div>
+                                                    <small class="opacity-75">Click to view PDF</small>
+                                                </div>
+                                            </a>
+                                        }
                                         else
                                         {
                                             <a href="@msg.Content" target="_blank" class="@(isMine ? "text-white" : "text-primary") text-decoration-none d-flex align-items-center gap-2 p-1">
@@ -191,6 +215,29 @@
                         <small class="text-muted mt-1" style="font-size: 0.65rem;">@msg.CreatedAt.ToLocalTime().ToString("t")</small>
                     </div>
                 }
+                
+                <!-- Typing Indicator Bubble -->
+                <div id="typingIndicator" class="d-none flex-column align-items-start mw-75 mb-2 transition-all">
+                    <div class="d-flex align-items-center gap-2">
+                        @if (!string.IsNullOrEmpty(Model.ActiveContact.AvatarUrl))
+                        {
+                            <img src="@Model.ActiveContact.AvatarUrl" class="rounded-circle bg-white" style="width: 24px; height: 24px; object-fit: cover;">
+                        }
+                        else
+                        {
+                            <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 24px; height: 24px; font-weight: bold; font-size: 0.6rem;">
+                                @GetInitials(Model.ActiveContact.Fullname ?? Model.ActiveContact.Username)
+                            </div>
+                        }
+                        <div class="p-2 px-3 rounded-4 bg-white text-dark border shadow-sm" style="max-width: fit-content;">
+                            <span class="typing-dots text-muted">
+                                <i class="fa-solid fa-circle" style="font-size: 0.35rem; animation: blink 1.4s infinite .2s;"></i>
+                                <i class="fa-solid fa-circle" style="font-size: 0.35rem; animation: blink 1.4s infinite .4s;"></i>
+                                <i class="fa-solid fa-circle" style="font-size: 0.35rem; animation: blink 1.4s infinite .6s;"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Chat Input Footer -->
@@ -212,7 +259,10 @@
                     </button>
 
                     <!-- Text Input -->
-                    <textarea id="messageInput" class="form-control border-0 bg-transparent shadow-none resize-none pt-2" style="max-height: 100px; line-height: 1.2;" rows="1" placeholder="Aa" required></textarea>
+                    <div class="position-relative flex-grow-1">
+                        <textarea id="messageInput" class="form-control border-0 bg-transparent shadow-none resize-none pt-2" style="max-height: 100px; line-height: 1.2;" rows="1" placeholder="Aa"></textarea>
+                        <emoji-picker class="d-none position-absolute shadow-lg border rounded-4" style="bottom: 100%; left: 0; z-index: 1050; max-height: 350px;"></emoji-picker>
+                    </div>
                     
                     <!-- Send Button -->
                     <button type="submit" class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center p-0 flex-shrink-0 shadow-sm transition-all" style="width: 38px; height: 38px;">
@@ -284,6 +334,13 @@
 
 @section Styles {
     <style>
+        /* Lock body scroll, hide layout footer */
+        body { overflow: hidden; }
+        footer { display: none !important; }
+        
+        /* Fit precisely on screen minus navbar header (approx 76px) */
+        .chat-container { height: calc(100vh - 76px); margin: -1.5rem; overflow: hidden; }
+
         .chat-item-hover:hover { background-color: rgba(0,0,0,0.03); cursor: pointer; }
         .hover-bg-light:hover { background-color: #f8f9fa; }
         .transition-all { transition: all 0.2s ease-in-out; }
@@ -295,6 +352,12 @@
         .chat-messages-container::-webkit-scrollbar-track { background: transparent; }
         .chat-messages-container::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
         .chat-messages-container::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
+        
+        @@keyframes blink {
+            0% { opacity: .2; }
+            50% { opacity: 1; }
+            100% { opacity: .2; }
+        }
     </style>
 }
 
@@ -302,9 +365,8 @@
     <!-- SignalR Client Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
     
-    <!-- Emoji Picker Library (Picmo) -->
-    <script src="https://unpkg.com/@@picmo/picmo@latest/dist/umd/picmo.js"></script>
-    <script src="https://unpkg.com/@@picmo/popup-picker@latest/dist/umd/picmo-popup.js"></script>
+    <!-- Robust Emoji Picker web component -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@@^1/index.js"></script>
     
     <script src="~/js/chat.js" asp-append-version="true"></script>
     <script>

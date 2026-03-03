@@ -1,38 +1,70 @@
-# Student Management System (SMS)
+# 🎓 Student Management System (SMS)
 
-A comprehensive student management system built with ASP.NET Core Razor Pages and PostgreSQL.
+A modern, comprehensive student management system built with **ASP.NET Core Razor Pages**, **Entity Framework Core**, and **PostgreSQL**. The application features a robust N-Tier architecture and integrates advanced AI capabilities and real-time communication to provide a seamless educational management experience.
 
-## Prerequisites
+---
+
+## ✨ Features
+
+- **🔐 Role-Based Access Control**: Secure portals and specialized permissions for Students, Teachers, and Administrators.
+- **👥 Student Profile Management**: Full CRUD operations for student accounts, including administrative actions like password resets and profile updates.
+- **📚 Course & Registration System**: 
+  - Students can easily browse course syllabi and view their personalized timetables.
+  - Smart course registration system allowing enrollment for up to 5 courses per term.
+  - Automated scheduling conflict prevention and duplicate registration checks.
+- **🤖 AI Student Assistant**: An intelligent chatbot powered by **Microsoft Foundry SDK** (Azure AI). It provides students with real-time advisory on timetables, course details, study assistance, event notifications, and psychological support.
+- **💬 Real-time Communication**: Interactive chat features built on **SignalR**. Includes real-time typing indicators and inline media previews (PDFs, Videos) for enhanced collaboration.
+- **🏗️ Clean N-Tier Architecture**: Strict separation of concerns across the Web Application (Razor Pages), Business Logic Layer (BLL), and Data Access Layer (DAL).
+
+---
+
+## 🛠️ Technology Stack
+
+- **Framework**: .NET 10 / ASP.NET Core Razor Pages
+- **Database**: PostgreSQL (v12+)
+- **ORM**: Entity Framework (EF) Core
+- **Real-Time Communication**: SignalR
+- **AI Integration**: Microsoft Foundry SDK
+- **Frontend**: Bootstrap, Vanilla CSS & JS
+
+---
+
+## 📁 Project Structure
+
+The project follows a clean N-Tier architecture for maintainability and scalability:
+
+```text
+spring26-student-management-system/
+├── src/
+│   ├── SmsRazor.DAL/          # Data Access Layer (Entities, DbContext, Migrations)
+│   ├── SmsRazor.BLL/          # Business Logic Layer (Services, Validation logic)
+│   └── SmsRazor.WebApp/       # Web Application (Razor Pages, SignalR Hubs, UI)
+├── infrastructure/            # Infrastructure & Deployment configurations (e.g., Bicep/Terraform)
+└── testproj/                  # Unit and Integration Tests
+```
+
+---
+
+## 🚀 Getting Started
+
+### 1. Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
 - [PostgreSQL](https://www.postgresql.org/download/) (version 12 or higher)
-- A code editor (Visual Studio, VS Code, or Rider)
+- Visual Studio 2022, VS Code, or JetBrains Rider
 
-## Project Structure
-
-```
-student_management_system/
-├── src/
-│   ├── SmsRazor.DAL/          # Data Access Layer (Entities, DbContext)
-│   ├── SmsRazor.BLL/          # Business Logic Layer
-│   └── SmsRazor.WebApp/       # Web Application (Razor Pages)
-└── infrastructure/            # Infrastructure configuration
-```
-
-## Getting Started
-
-### 1. Clone the Repository
+### 2. Clone the Repository
 
 ```bash
 git clone <repository-url>
-cd student_management_system
+cd spring26-student-management-system
 ```
 
-### 2. Configure Database Connection
+### 3. Configure Database Connection
 
-You have two options for database configuration:
+You have two options for configuring the database connection:
 
-#### Option A: Using .env file (Recommended for development)
+#### Option A: Using `.env` file (Recommended for development)
 
 Navigate to `src/SmsRazor.WebApp` and create a `.env` file:
 
@@ -51,7 +83,7 @@ DB_USER=postgres
 DB_PASS=your_password_here
 ```
 
-#### Option B: Using appsettings.json
+#### Option B: Using `appsettings.json`
 
 Edit `src/SmsRazor.WebApp/appsettings.json`:
 
@@ -63,9 +95,9 @@ Edit `src/SmsRazor.WebApp/appsettings.json`:
 }
 ```
 
-> **Note**: The application prioritizes `.env` if it exists, otherwise falls back to `appsettings.json`. For EF migrations, update the connection string in `appsettings.json`.
+> **Note**: The application prioritizes `.env` if it exists, otherwise it falls back to `appsettings.json`. For running EF migrations from the CLI, ensure the connection string is correctly set in `appsettings.json`.
 
-### 3. Install Dependencies
+### 4. Install Dependencies
 
 From the `src` directory, restore all NuGet packages:
 
@@ -74,43 +106,16 @@ cd src
 dotnet restore
 ```
 
-### 4. Ensure PostgreSQL is Running
+### 5. Create the Database & Apply Migrations
 
-Make sure your PostgreSQL server is running and accessible:
-
-**Windows (if installed as service):**
-```bash
-# Check if PostgreSQL is running
-sc query postgresql-x64-<version>
-
-# Start if not running
-net start postgresql-x64-<version>
-```
-
-**Linux:**
-```bash
-sudo systemctl status postgresql
-sudo systemctl start postgresql
-```
-
-**macOS:**
-```bash
-brew services list
-brew services start postgresql
-```
-
-### 5. Create the Database
-
-**Important**: Update the connection string in `appsettings.json` before running migrations, as EF tools read from configuration files, not `.env`.
-
-Apply the migrations from the `SmsRazor.WebApp` directory:
+Ensure your PostgreSQL server is running. Then apply the migrations to create the database schema:
 
 ```bash
 cd src/SmsRazor.WebApp
 dotnet ef database update --project ..\SmsRazor.DAL\SmsRazor.DAL.csproj
 ```
 
-This will create the `sms-db` database with all required tables.
+This will create the `sms-db` database and all necessary tables (Roles, Accounts, StudentInfo, Syllabi, Enrollments, etc.).
 
 ### 6. Run the Application
 
@@ -118,36 +123,35 @@ This will create the `sms-db` database with all required tables.
 dotnet run
 ```
 
-The application will start and be available at `http://localhost:5205` (or the port specified in `launchSettings.json`).
+The application will launch and be available at the URL specified in your `launchSettings.json` (e.g., `http://localhost:5205`).
 
-## Database Schema
+---
 
-The system includes the following entities:
+## 💾 Database Schema Overview
 
-- **Role**: User roles and permissions
-- **Account**: User accounts with authentication
-- **StudentInfo**: Student records and academic information
-- **AdminInfo**: Administrative staff information
-- **TeacherInfo**: Teacher/instructor information
-- **Department**: Academic departments
-- **Intake**: Student intake/cohort information
-- **Syllabus**: Course syllabi
-- **StudentStatus**: Student enrollment status
+The core entities modeled in the Data Access Layer include:
+- **Role & Account**: Handles authentication and authorization.
+- **StudentInfo, AdminInfo, TeacherInfo**: Stores core user profiles and personal information.
+- **Department & Intake**: Manages academic organization and batch tracking.
+- **Syllabus & Course**: Defines academic offerings.
+- **StudentStatus & Enrollment**: Tracks course registration and student progress.
 
-All entities automatically track creation and modification timestamps.
+All tables automatically track creation and modification timestamps for auditing.
 
-## Development
+---
+
+## 🧑‍💻 Development Guide
 
 ### Adding New Migrations
 
-After modifying entities, create a new migration:
+After modifying entities in `SmsRazor.DAL`, create a new migration:
 
 ```bash
 cd src/SmsRazor.WebApp
 dotnet ef migrations add <MigrationName> --project ..\SmsRazor.DAL\SmsRazor.DAL.csproj
 ```
 
-Apply the migration:
+### Applying Migrations
 
 ```bash
 dotnet ef database update --project ..\SmsRazor.DAL\SmsRazor.DAL.csproj
@@ -155,7 +159,7 @@ dotnet ef database update --project ..\SmsRazor.DAL\SmsRazor.DAL.csproj
 
 ### Reverting Migrations
 
-To remove the last migration:
+To remove the last unapplied migration:
 
 ```bash
 dotnet ef migrations remove --project ..\SmsRazor.DAL\SmsRazor.DAL.csproj
@@ -168,59 +172,11 @@ cd src
 dotnet build
 ```
 
-## Troubleshooting
+---
 
-### PostgreSQL Not Running
+## 🐳 Docker Support
 
-**Error**: `Failed to connect to 127.0.0.1:5432` or `No connection could be made because the target machine actively refused it`
-
-**Solution**: Ensure PostgreSQL is running (see step 4 above).
-
-### Port Already in Use
-
-If you encounter "address already in use" errors:
-
-**Windows:**
-```bash
-netstat -ano | findstr :<port>
-taskkill /F /PID <process_id>
-```
-
-**Linux/Mac:**
-```bash
-lsof -i :<port>
-kill -9 <process_id>
-```
-
-### Database Connection Issues
-
-1. Verify PostgreSQL is running
-2. Check credentials in `.env` or `appsettings.json`
-3. Ensure the database user has proper permissions
-4. Test connection: `psql -h localhost -U postgres -d sms-db`
-
-### Migration Errors
-
-If migrations fail:
-1. Check database connectivity
-2. Ensure `appsettings.json` has the correct connection string (EF tools don't read `.env`)
-3. Verify no other process is using the database
-4. Check entity configurations in `SmsDbContext`
-
-## Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `DB_HOST` | PostgreSQL host | `localhost` |
-| `DB_PORT` | PostgreSQL port | `5432` |
-| `DB_NAME` | Database name | `sms-db` |
-| `DB_USER` | Database user | `postgres` |
-| `DB_PASS` | Database password | - |
-
-
-## Docker Support
-
-### Build and Run with Docker
+You can easily containerize the application for consistent deployment:
 
 1. **Build the image**:
    ```bash
@@ -231,11 +187,14 @@ If migrations fail:
    ```bash
    docker run -d -p 8080:80 --name sms-container sms-app
    ```
-   The application will be accessible at `http://localhost:8080`.
+   Access the app at `http://localhost:8080`.
 
-> **Note**: For the Docker container to connect to your local PostgreSQL, you may need to adjust the connection string or use Docker Compose.
+> **Note**: To connect the Docker container to your local PostgreSQL instance, you may need to adjust the DB host in your connection string (e.g., change `localhost` to `host.docker.internal`).
 
+---
 
-## Contributing
+## ❓ Troubleshooting
 
-[Your Contributing Guidelines Here]
+- **Database Connection Issues**: Verify credentials in `.env` or `appsettings.json`. Ensure PostgreSQL is running and accessible on the specified port.
+- **Port Already in Use**: Change the application port in `Properties/launchSettings.json` or terminate the conflicting process using `netstat` and `taskkill` (Windows) or `lsof` and `kill` (Mac/Linux).
+- **Migration Errors**: Ensure `appsettings.json` has the correct connection string (EF CLI tools primarily read from `appsettings.json` rather than `.env`). Check verify that no other process is locking the database.
