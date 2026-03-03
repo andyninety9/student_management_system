@@ -10,9 +10,9 @@ COPY ["src/SmsRazor.BLL/SmsRazor.BLL.csproj", "src/SmsRazor.BLL/"]
 COPY ["src/SmsRazor.WebApp/SmsRazor.WebApp.csproj", "src/SmsRazor.WebApp/"]
 
 # Restore dependencies
-# We need to be in the directory containing the solution file
+# We restore the main project explicitly to avoid .slnx compatibility issues in .NET 8 SDK
 WORKDIR /app/src
-RUN dotnet restore
+RUN dotnet restore "SmsRazor.WebApp/SmsRazor.WebApp.csproj"
 
 # Copy the rest of the source code
 WORKDIR /app
