@@ -6,22 +6,28 @@ using Microsoft.EntityFrameworkCore;
 using SmsRazor.DAL.Data;
 using SmsRazor.DAL.Entities;
 
+using SmsRazor.DAL.Repositories;
+
 namespace SmsRazor.BLL.Services;
 
 public class AttendanceService : IAttendanceService
 {
-    private readonly SmsDbContext _context;
+    private readonly IRepository<Enrollment> _enrollmentRepository;
+    private readonly IRepository<Attendance> _attendanceRepository;
 
-    public AttendanceService(SmsDbContext context)
+    public AttendanceService(
+        IRepository<Enrollment> enrollmentRepository,
+        IRepository<Attendance> attendanceRepository)
     {
-        _context = context;
+        _enrollmentRepository = enrollmentRepository;
+        _attendanceRepository = attendanceRepository;
     }
 
     public async Task<IEnumerable<UpcomingClassDTO>> GetStudentUpcomingClassesAsync(string studentCode, int limit = 3)
     {
         var today = DateTime.UtcNow.Date;
 
-        var upcomingClasses = await _context.Enrollments
+        var upcomingClasses = await _enrollmentRepository.Entities
             .Where(e => e.StudentCode == studentCode && e.Section!.Status == true)
             .SelectMany(e => e.Section!.Calendars)
             .Where(c => c.StudyDate >= today)
@@ -36,7 +42,7 @@ public class AttendanceService : IAttendanceService
                 Room = "TBA",
                 Date = c.StudyDate,
                 Slot = c.Slot,
-                Status = _context.Attendances
+                Status = _attendanceRepository.Entities
                     .Where(a => a.AcademicCalendarId == c.AcademicCalendarId && a.StudentCode == studentCode)
                     .Select(a => a.Status)
                     .FirstOrDefault() // Will default to 0 (NotYetMarked) if no record exists
@@ -49,7 +55,7 @@ public class AttendanceService : IAttendanceService
     public async Task<IEnumerable<AttendanceRecordDTO>> GetStudentAttendanceRecordsAsync(string studentCode, Guid termId)
     {
         // Get all enrollments for the student in the given term
-        var enrollments = await _context.Enrollments
+        var enrollments = await _enrollmentRepository.Entities
             .Include(e => e.Section!)
             .ThenInclude(s => s.Course)
             .Include(e => e.Section!.TeacherAssignment)
@@ -69,7 +75,7 @@ public class AttendanceService : IAttendanceService
             var calendarIds = calendars.Select(c => c.AcademicCalendarId).ToList();
 
             // Fetch actual attendance records for this mathing student and section calendars
-            var attendanceRecords = await _context.Attendances
+            var attendanceRecords = await _attendanceRepository.Entities
                 .Where(a => a.StudentCode == studentCode && calendarIds.Contains(a.AcademicCalendarId))
                 .ToDictionaryAsync(a => a.AcademicCalendarId);
 

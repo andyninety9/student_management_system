@@ -9,20 +9,32 @@ using SmsRazor.BLL.DTOs;
 using SmsRazor.DAL.Data;
 using SmsRazor.DAL.Entities;
 
+using SmsRazor.DAL.Repositories;
+
 namespace SmsRazor.BLL.Services;
 
 public class TeacherService : ITeacherService
 {
-    private readonly SmsDbContext _context;
+    private readonly IRepository<Account> _accountRepository;
+    private readonly IRepository<TeacherInfo> _teacherInfoRepository;
+    private readonly IRepository<Department> _departmentRepository;
+    private readonly IRepository<Role> _roleRepository;
 
-    public TeacherService(SmsDbContext context)
+    public TeacherService(
+        IRepository<Account> accountRepository,
+        IRepository<TeacherInfo> teacherInfoRepository,
+        IRepository<Department> departmentRepository,
+        IRepository<Role> roleRepository)
     {
-        _context = context;
+        _accountRepository = accountRepository;
+        _teacherInfoRepository = teacherInfoRepository;
+        _departmentRepository = departmentRepository;
+        _roleRepository = roleRepository;
     }
 
     public async Task<IEnumerable<TeacherDTO>> GetAllTeachersAsync()
     {
-        var teachers = await _context.TeacherInfos
+        var teachers = await _teacherInfoRepository.Entities
             .Include(t => t.Account)
             .Include(t => t.Department)
             .OrderByDescending(t => t.Account!.CreatedAt)
@@ -33,7 +45,7 @@ public class TeacherService : ITeacherService
 
     public async Task<TeacherDTO?> GetTeacherByCodeAsync(string teacherCode)
     {
-        var teacher = await _context.TeacherInfos
+        var teacher = await _teacherInfoRepository.Entities
             .Include(t => t.Account)
             .Include(t => t.Department)
             .FirstOrDefaultAsync(t => t.TeacherCode == teacherCode);
@@ -44,7 +56,7 @@ public class TeacherService : ITeacherService
 
     public async Task<TeacherDTO?> GetTeacherByIdAsync(Guid accountId)
     {
-        var teacher = await _context.TeacherInfos
+        var teacher = await _teacherInfoRepository.Entities
             .Include(t => t.Account)
             .Include(t => t.Department)
             .FirstOrDefaultAsync(t => t.AccountId == accountId);
@@ -56,14 +68,14 @@ public class TeacherService : ITeacherService
     public async Task<string?> CreateTeacherAsync(TeacherDTO dto)
     {
         // 1. Validate uniqueness
-        if (await _context.Accounts.AnyAsync(a => a.Email == dto.Email || a.Username == dto.Email))
+        if (await _accountRepository.Entities.AnyAsync(a => a.Email == dto.Email || a.Username == dto.Email))
             throw new Exception("Email is already registered.");
 
-        if (await _context.TeacherInfos.AnyAsync(t => t.TeacherCode == dto.TeacherCode))
+        if (await _teacherInfoRepository.Entities.AnyAsync(t => t.TeacherCode == dto.TeacherCode))
             throw new Exception("Teacher Code already exists.");
 
         // 2. Ensure Teacher Role exists
-        var teacherRole = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Teacher");
+        var teacherRole = await _roleRepository.Entities.FirstOrDefaultAsync(r => r.RoleName == "Teacher");
         if (teacherRole == null)
         {
             teacherRole = new Role
@@ -72,8 +84,8 @@ public class TeacherService : ITeacherService
                 RoleName = "Teacher",
                 IsActive = true
             };
-            _context.Roles.Add(teacherRole);
-            await _context.SaveChangesAsync();
+            await _roleRepository.AddAsync(teacherRole);
+            await _roleRepository.SaveChangesAsync();
         }
 
         // 3. Create Account
@@ -94,7 +106,7 @@ public class TeacherService : ITeacherService
             EmailVerified = true // Auto-verify for admin created
         };
 
-        _context.Accounts.Add(account);
+        await _accountRepository.AddAsync(account);
 
         // 4. Create TeacherInfo
         var teacherInfo = new TeacherInfo
@@ -105,15 +117,15 @@ public class TeacherService : ITeacherService
             Title = dto.Title
         };
 
-        _context.TeacherInfos.Add(teacherInfo);
-        await _context.SaveChangesAsync();
+        await _teacherInfoRepository.AddAsync(teacherInfo);
+        await _teacherInfoRepository.SaveChangesAsync();
 
         return teacherInfo.TeacherCode;
     }
 
     public async Task<bool> UpdateTeacherAsync(TeacherDTO dto)
     {
-        var teacherInfo = await _context.TeacherInfos
+        var teacherInfo = await _teacherInfoRepository.Entities
             .Include(t => t.Account)
             .FirstOrDefaultAsync(t => t.TeacherCode == dto.TeacherCode);
 
@@ -122,7 +134,7 @@ public class TeacherService : ITeacherService
         // Check email uniqueness if email changed
         if (teacherInfo.Account.Email != dto.Email)
         {
-            if (await _context.Accounts.AnyAsync(a => a.AccountId != teacherInfo.AccountId && (a.Email == dto.Email || a.Username == dto.Email)))
+            if (await _accountRepository.Entities.AnyAsync(a => a.AccountId != teacherInfo.AccountId && (a.Email == dto.Email || a.Username == dto.Email)))
             {
                 throw new Exception("Email is already used by another account.");
             }
@@ -142,41 +154,41 @@ public class TeacherService : ITeacherService
         teacherInfo.DepartmentId = dto.DepartmentId;
         teacherInfo.Title = dto.Title;
 
-        _context.Accounts.Update(teacherInfo.Account);
-        _context.TeacherInfos.Update(teacherInfo);
-        await _context.SaveChangesAsync();
+        _accountRepository.Update(teacherInfo.Account);
+        _teacherInfoRepository.Update(teacherInfo);
+        await _teacherInfoRepository.SaveChangesAsync();
 
         return true;
     }
 
     public async Task<bool> DeleteTeacherAsync(string teacherCode)
     {
-        var teacherInfo = await _context.TeacherInfos.FirstOrDefaultAsync(t => t.TeacherCode == teacherCode);
+        var teacherInfo = await _teacherInfoRepository.Entities.FirstOrDefaultAsync(t => t.TeacherCode == teacherCode);
         if (teacherInfo == null) return false;
 
-        var account = await _context.Accounts.FindAsync(teacherInfo.AccountId);
+        var account = await _accountRepository.GetByIdAsync(teacherInfo.AccountId);
         
-        _context.TeacherInfos.Remove(teacherInfo);
+        _teacherInfoRepository.Remove(teacherInfo);
         if (account != null)
         {
-            _context.Accounts.Remove(account);
+            _accountRepository.Remove(account);
         }
 
-        await _context.SaveChangesAsync();
+        await _teacherInfoRepository.SaveChangesAsync();
         return true;
     }
 
     public async Task<bool> ResetTeacherPasswordAsync(string teacherCode, string newPassword)
     {
-        var teacherInfo = await _context.TeacherInfos
+        var teacherInfo = await _teacherInfoRepository.Entities
             .Include(t => t.Account)
             .FirstOrDefaultAsync(t => t.TeacherCode == teacherCode);
 
         if (teacherInfo == null || teacherInfo.Account == null) return false;
 
         teacherInfo.Account.PasswordHash = HashPassword(newPassword);
-        _context.Accounts.Update(teacherInfo.Account);
-        await _context.SaveChangesAsync();
+        _accountRepository.Update(teacherInfo.Account);
+        await _accountRepository.SaveChangesAsync();
 
         return true;
     }
@@ -184,7 +196,7 @@ public class TeacherService : ITeacherService
     // Lookups
     public async Task<IEnumerable<KeyValuePair<Guid, string>>> GetDepartmentsLookupAsync()
     {
-        var list = await _context.Departments.Where(x => x.IsActive).OrderBy(x => x.DepartmentNameEng).ToListAsync();
+        var list = await _departmentRepository.Entities.Where(x => x.IsActive).OrderBy(x => x.DepartmentNameEng).ToListAsync();
         return list.Select(x => new KeyValuePair<Guid, string>(x.DepartmentId, x.DepartmentNameEng));
     }
 

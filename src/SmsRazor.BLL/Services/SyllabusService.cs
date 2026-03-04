@@ -7,20 +7,32 @@ using SmsRazor.BLL.DTOs;
 using SmsRazor.DAL.Data;
 using SmsRazor.DAL.Entities;
 
+using SmsRazor.DAL.Repositories;
+
 namespace SmsRazor.BLL.Services;
 
 public class SyllabusService : ISyllabusService
 {
-    private readonly SmsDbContext _context;
+    private readonly IRepository<Syllabus> _syllabusRepository;
+    private readonly IRepository<SyllabusCourse> _syllabusCourseRepository;
+    private readonly IRepository<Department> _departmentRepository;
+    private readonly IRepository<Course> _courseRepository;
 
-    public SyllabusService(SmsDbContext context)
+    public SyllabusService(
+        IRepository<Syllabus> syllabusRepository,
+        IRepository<SyllabusCourse> syllabusCourseRepository,
+        IRepository<Department> departmentRepository,
+        IRepository<Course> courseRepository)
     {
-        _context = context;
+        _syllabusRepository = syllabusRepository;
+        _syllabusCourseRepository = syllabusCourseRepository;
+        _departmentRepository = departmentRepository;
+        _courseRepository = courseRepository;
     }
 
     public async Task<IEnumerable<KeyValuePair<Guid, string>>> GetDepartmentsLookupAsync()
     {
-        var departments = await _context.Departments
+        var departments = await _departmentRepository.Entities
             .Where(d => d.IsActive)
             .OrderBy(d => d.DepartmentNameEng)
             .ToListAsync();
@@ -30,7 +42,7 @@ public class SyllabusService : ISyllabusService
 
     public async Task<IEnumerable<KeyValuePair<Guid, string>>> GetCoursesLookupAsync()
     {
-        var courses = await _context.Courses
+        var courses = await _courseRepository.Entities
             .Where(c => c.IsActive)
             .OrderBy(c => c.CourseNameEng)
             .ToListAsync();
@@ -39,7 +51,7 @@ public class SyllabusService : ISyllabusService
 
     public async Task<IEnumerable<SyllabusDTO>> GetAllSyllabiAsync()
     {
-        var syllabi = await _context.Syllabuses
+        var syllabi = await _syllabusRepository.Entities
             .Include(s => s.Department)
             .OrderByDescending(s => s.CreatedAt)
             .ToListAsync();
@@ -60,14 +72,14 @@ public class SyllabusService : ISyllabusService
 
     public async Task<SyllabusDTO?> GetSyllabusByIdAsync(Guid syllabusId)
     {
-        var s = await _context.Syllabuses
+        var s = await _syllabusRepository.Entities
             .Include(s => s.Department)
             .FirstOrDefaultAsync(s => s.SyllabusId == syllabusId);
 
         if (s == null) return null;
         
         // Fetch related courses
-        var courseIds = await _context.SyllabusCourses
+        var courseIds = await _syllabusCourseRepository.Entities
             .Where(sc => sc.SyllabusId == syllabusId)
             .Select(sc => sc.CourseId)
             .ToListAsync();
@@ -101,7 +113,7 @@ public class SyllabusService : ISyllabusService
             IsActive = dto.IsActive
         };
 
-        _context.Syllabuses.Add(syllabus);
+        await _syllabusRepository.AddAsync(syllabus);
         
         if (dto.CourseIds != null && dto.CourseIds.Any())
         {
@@ -111,17 +123,17 @@ public class SyllabusService : ISyllabusService
                 SyllabusId = syllabus.SyllabusId,
                 CourseId = cid
             });
-            _context.SyllabusCourses.AddRange(syllabusCourses);
+            await _syllabusCourseRepository.AddRangeAsync(syllabusCourses);
         }
 
-        await _context.SaveChangesAsync();
+        await _syllabusRepository.SaveChangesAsync();
 
         return syllabus.SyllabusId;
     }
 
     public async Task<bool> UpdateSyllabusAsync(SyllabusDTO dto)
     {
-        var syllabus = await _context.Syllabuses.FindAsync(dto.SyllabusId);
+        var syllabus = await _syllabusRepository.GetByIdAsync(dto.SyllabusId);
         if (syllabus == null) return false;
 
         syllabus.DepartmentId = dto.DepartmentId;
@@ -132,8 +144,8 @@ public class SyllabusService : ISyllabusService
         syllabus.Description = dto.Description;
         syllabus.IsActive = dto.IsActive;
 
-        var existingCourses = await _context.SyllabusCourses.Where(sc => sc.SyllabusId == syllabus.SyllabusId).ToListAsync();
-        _context.SyllabusCourses.RemoveRange(existingCourses);
+        var existingCourses = await _syllabusCourseRepository.Entities.Where(sc => sc.SyllabusId == syllabus.SyllabusId).ToListAsync();
+        _syllabusCourseRepository.RemoveRange(existingCourses);
 
         if (dto.CourseIds != null && dto.CourseIds.Any())
         {
@@ -143,22 +155,22 @@ public class SyllabusService : ISyllabusService
                 SyllabusId = syllabus.SyllabusId,
                 CourseId = cid
             });
-            _context.SyllabusCourses.AddRange(newCourses);
+            await _syllabusCourseRepository.AddRangeAsync(newCourses);
         }
 
-        _context.Syllabuses.Update(syllabus);
-        await _context.SaveChangesAsync();
+        _syllabusRepository.Update(syllabus);
+        await _syllabusRepository.SaveChangesAsync();
 
         return true;
     }
 
     public async Task<bool> DeleteSyllabusAsync(Guid syllabusId)
     {
-        var syllabus = await _context.Syllabuses.FindAsync(syllabusId);
+        var syllabus = await _syllabusRepository.GetByIdAsync(syllabusId);
         if (syllabus == null) return false;
 
-        _context.Syllabuses.Remove(syllabus);
-        await _context.SaveChangesAsync();
+        _syllabusRepository.Remove(syllabus);
+        await _syllabusRepository.SaveChangesAsync();
 
         return true;
     }

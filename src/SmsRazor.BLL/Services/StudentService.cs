@@ -9,20 +9,41 @@ using SmsRazor.BLL.DTOs;
 using SmsRazor.DAL.Data;
 using SmsRazor.DAL.Entities;
 
+using SmsRazor.DAL.Repositories;
+
 namespace SmsRazor.BLL.Services;
 
 public class StudentService : IStudentService
 {
-    private readonly SmsDbContext _context;
+    private readonly IRepository<Account> _accountRepository;
+    private readonly IRepository<StudentInfo> _studentInfoRepository;
+    private readonly IRepository<Role> _roleRepository;
+    private readonly IRepository<Department> _departmentRepository;
+    private readonly IRepository<Syllabus> _syllabusRepository;
+    private readonly IRepository<Intake> _intakeRepository;
+    private readonly IRepository<StudentStatus> _studentStatusRepository;
 
-    public StudentService(SmsDbContext context)
+    public StudentService(
+        IRepository<Account> accountRepository,
+        IRepository<StudentInfo> studentInfoRepository,
+        IRepository<Role> roleRepository,
+        IRepository<Department> departmentRepository,
+        IRepository<Syllabus> syllabusRepository,
+        IRepository<Intake> intakeRepository,
+        IRepository<StudentStatus> studentStatusRepository)
     {
-        _context = context;
+        _accountRepository = accountRepository;
+        _studentInfoRepository = studentInfoRepository;
+        _roleRepository = roleRepository;
+        _departmentRepository = departmentRepository;
+        _syllabusRepository = syllabusRepository;
+        _intakeRepository = intakeRepository;
+        _studentStatusRepository = studentStatusRepository;
     }
 
     public async Task<IEnumerable<StudentDTO>> GetAllStudentsAsync()
     {
-        var students = await _context.StudentInfos
+        var students = await _studentInfoRepository.Entities
             .Include(s => s.Account)
             .Include(s => s.Department)
             .Include(s => s.Syllabus)
@@ -36,7 +57,7 @@ public class StudentService : IStudentService
 
     public async Task<StudentDTO?> GetStudentByCodeAsync(string studentCode)
     {
-        var student = await _context.StudentInfos
+        var student = await _studentInfoRepository.Entities
             .Include(s => s.Account)
             .Include(s => s.Department)
             .Include(s => s.Syllabus)
@@ -50,7 +71,7 @@ public class StudentService : IStudentService
 
     public async Task<StudentDTO?> GetStudentByIdAsync(Guid accountId)
     {
-        var student = await _context.StudentInfos
+        var student = await _studentInfoRepository.Entities
             .Include(s => s.Account)
             .Include(s => s.Department)
             .Include(s => s.Syllabus)
@@ -65,14 +86,14 @@ public class StudentService : IStudentService
     public async Task<string?> CreateStudentAsync(StudentDTO dto)
     {
         // 1. Validate uniqueness
-        if (await _context.Accounts.AnyAsync(a => a.Email == dto.Email || a.Username == dto.Email))
+        if (await _accountRepository.Entities.AnyAsync(a => a.Email == dto.Email || a.Username == dto.Email))
             throw new Exception("Email is already registered.");
 
-        if (await _context.StudentInfos.AnyAsync(s => s.StudentCode == dto.StudentCode))
+        if (await _studentInfoRepository.Entities.AnyAsync(s => s.StudentCode == dto.StudentCode))
             throw new Exception("Student Code already exists.");
 
         // 2. Ensure Student Role exists
-        var studentRole = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Student");
+        var studentRole = await _roleRepository.Entities.FirstOrDefaultAsync(r => r.RoleName == "Student");
         if (studentRole == null)
         {
             studentRole = new Role
@@ -81,8 +102,8 @@ public class StudentService : IStudentService
                 RoleName = "Student",
                 IsActive = true
             };
-            _context.Roles.Add(studentRole);
-            await _context.SaveChangesAsync();
+            await _roleRepository.AddAsync(studentRole);
+            await _roleRepository.SaveChangesAsync();
         }
 
         // 3. Create Account
@@ -103,7 +124,7 @@ public class StudentService : IStudentService
             EmailVerified = true // Auto-verify for admin created
         };
 
-        _context.Accounts.Add(account);
+        await _accountRepository.AddAsync(account);
 
         // 4. Create StudentInfo
         var studentInfo = new StudentInfo
@@ -116,15 +137,15 @@ public class StudentService : IStudentService
             StudentStatusId = dto.StudentStatusId
         };
 
-        _context.StudentInfos.Add(studentInfo);
-        await _context.SaveChangesAsync();
+        await _studentInfoRepository.AddAsync(studentInfo);
+        await _studentInfoRepository.SaveChangesAsync();
 
         return studentInfo.StudentCode;
     }
 
     public async Task<bool> UpdateStudentAsync(StudentDTO dto)
     {
-        var studentInfo = await _context.StudentInfos
+        var studentInfo = await _studentInfoRepository.Entities
             .Include(s => s.Account)
             .FirstOrDefaultAsync(s => s.StudentCode == dto.StudentCode);
 
@@ -133,7 +154,7 @@ public class StudentService : IStudentService
         // Check email uniqueness if email changed
         if (studentInfo.Account.Email != dto.Email)
         {
-            if (await _context.Accounts.AnyAsync(a => a.AccountId != studentInfo.AccountId && (a.Email == dto.Email || a.Username == dto.Email)))
+            if (await _accountRepository.Entities.AnyAsync(a => a.AccountId != studentInfo.AccountId && (a.Email == dto.Email || a.Username == dto.Email)))
             {
                 throw new Exception("Email is already used by another account.");
             }
@@ -155,16 +176,16 @@ public class StudentService : IStudentService
         studentInfo.IntakeId = dto.IntakeId;
         studentInfo.StudentStatusId = dto.StudentStatusId;
 
-        _context.Accounts.Update(studentInfo.Account);
-        _context.StudentInfos.Update(studentInfo);
-        await _context.SaveChangesAsync();
+        _accountRepository.Update(studentInfo.Account);
+        _studentInfoRepository.Update(studentInfo);
+        await _studentInfoRepository.SaveChangesAsync();
 
         return true;
     }
 
     public async Task<bool> UpdateStudentProfileAsync(Guid accountId, StudentProfileUpdateDTO dto)
     {
-        var account = await _context.Accounts.FindAsync(accountId);
+        var account = await _accountRepository.GetByIdAsync(accountId);
         if (account == null)
         {
             return false;
@@ -175,41 +196,41 @@ public class StudentService : IStudentService
         account.Dob = dto.Dob.HasValue ? DateTime.SpecifyKind(dto.Dob.Value, DateTimeKind.Utc) : null;
         account.Address = dto.Address;
 
-        _context.Accounts.Update(account);
-        await _context.SaveChangesAsync();
+        _accountRepository.Update(account);
+        await _accountRepository.SaveChangesAsync();
 
         return true;
     }
 
     public async Task<bool> DeleteStudentAsync(string studentCode)
     {
-        var studentInfo = await _context.StudentInfos.FirstOrDefaultAsync(s => s.StudentCode == studentCode);
+        var studentInfo = await _studentInfoRepository.Entities.FirstOrDefaultAsync(s => s.StudentCode == studentCode);
         if (studentInfo == null) return false;
 
-        var account = await _context.Accounts.FindAsync(studentInfo.AccountId);
+        var account = await _accountRepository.GetByIdAsync(studentInfo.AccountId);
         
         // Remove both Note: Make sure Foreign Keys constraints allow this or cascade is setup, otherwise delete StudentInfo first
-        _context.StudentInfos.Remove(studentInfo);
+        _studentInfoRepository.Remove(studentInfo);
         if (account != null)
         {
-            _context.Accounts.Remove(account);
+            _accountRepository.Remove(account);
         }
 
-        await _context.SaveChangesAsync();
+        await _studentInfoRepository.SaveChangesAsync();
         return true;
     }
 
     public async Task<bool> ResetStudentPasswordAsync(string studentCode, string newPassword)
     {
-        var studentInfo = await _context.StudentInfos
+        var studentInfo = await _studentInfoRepository.Entities
             .Include(s => s.Account)
             .FirstOrDefaultAsync(s => s.StudentCode == studentCode);
 
         if (studentInfo == null || studentInfo.Account == null) return false;
 
         studentInfo.Account.PasswordHash = HashPassword(newPassword);
-        _context.Accounts.Update(studentInfo.Account);
-        await _context.SaveChangesAsync();
+        _accountRepository.Update(studentInfo.Account);
+        await _accountRepository.SaveChangesAsync();
 
         return true;
     }
@@ -217,13 +238,13 @@ public class StudentService : IStudentService
     // Lookups
     public async Task<IEnumerable<KeyValuePair<Guid, string>>> GetDepartmentsLookupAsync()
     {
-        var list = await _context.Departments.Where(x => x.IsActive).OrderBy(x => x.DepartmentNameEng).ToListAsync();
+        var list = await _departmentRepository.Entities.Where(x => x.IsActive).OrderBy(x => x.DepartmentNameEng).ToListAsync();
         return list.Select(x => new KeyValuePair<Guid, string>(x.DepartmentId, x.DepartmentNameEng));
     }
 
     public async Task<IEnumerable<KeyValuePair<Guid, string>>> GetSyllabusesLookupAsync(Guid? departmentId = null)
     {
-        var query = _context.Syllabuses.Where(x => x.IsActive).AsQueryable();
+        var query = _syllabusRepository.Entities.Where(x => x.IsActive).AsQueryable();
         
         if (departmentId.HasValue)
         {
@@ -236,7 +257,7 @@ public class StudentService : IStudentService
 
     public async Task<IEnumerable<KeyValuePair<Guid, string>>> GetIntakesLookupAsync()
     {
-        var list = await _context.Intakes.OrderBy(x => x.Name).ToListAsync();
+        var list = await _intakeRepository.Entities.OrderBy(x => x.Name).ToListAsync();
         
         // Auto-seed if empty for demo purposes
         if (!list.Any())
@@ -247,8 +268,8 @@ public class StudentService : IStudentService
                 new Intake { IntakeId = Guid.NewGuid(), Name = "Spring 2026" },
                 new Intake { IntakeId = Guid.NewGuid(), Name = "Summer 2026" }
             };
-            _context.Intakes.AddRange(seed);
-            await _context.SaveChangesAsync();
+            await _intakeRepository.AddRangeAsync(seed);
+            await _intakeRepository.SaveChangesAsync();
             return seed.Select(x => new KeyValuePair<Guid, string>(x.IntakeId, x.Name));
         }
 
@@ -257,7 +278,7 @@ public class StudentService : IStudentService
 
     public async Task<IEnumerable<KeyValuePair<Guid, string>>> GetStudentStatusesLookupAsync()
     {
-        var list = await _context.StudentStatuses.OrderBy(x => x.Name).ToListAsync();
+        var list = await _studentStatusRepository.Entities.OrderBy(x => x.Name).ToListAsync();
         
         // Auto-seed if empty for demo purposes
         if (!list.Any())
@@ -269,8 +290,8 @@ public class StudentService : IStudentService
                 new StudentStatus { StudentStatusId = Guid.NewGuid(), Name = "Graduated" },
                 new StudentStatus { StudentStatusId = Guid.NewGuid(), Name = "Suspended" }
             };
-            _context.StudentStatuses.AddRange(seed);
-            await _context.SaveChangesAsync();
+            await _studentStatusRepository.AddRangeAsync(seed);
+            await _studentStatusRepository.SaveChangesAsync();
             return seed.Select(x => new KeyValuePair<Guid, string>(x.StudentStatusId, x.Name));
         }
 

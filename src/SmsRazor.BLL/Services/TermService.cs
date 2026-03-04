@@ -7,20 +7,26 @@ using SmsRazor.BLL.DTOs;
 using SmsRazor.DAL.Data;
 using SmsRazor.DAL.Entities;
 
+using SmsRazor.DAL.Repositories;
+
 namespace SmsRazor.BLL.Services;
 
 public class TermService : ITermService
 {
-    private readonly SmsDbContext _context;
+    private readonly IRepository<Term> _termRepository;
+    private readonly IRepository<AcademicCalendar> _academicCalendarRepository;
 
-    public TermService(SmsDbContext context)
+    public TermService(
+        IRepository<Term> termRepository,
+        IRepository<AcademicCalendar> academicCalendarRepository)
     {
-        _context = context;
+        _termRepository = termRepository;
+        _academicCalendarRepository = academicCalendarRepository;
     }
 
     public async Task<IEnumerable<TermDTO>> GetAllTermsAsync()
     {
-        var terms = await _context.Terms
+        var terms = await _termRepository.Entities
             .OrderByDescending(t => t.StartDate)
             .ToListAsync();
 
@@ -29,7 +35,7 @@ public class TermService : ITermService
 
     public async Task<TermDTO?> GetTermByIdAsync(Guid termId)
     {
-        var term = await _context.Terms.FindAsync(termId);
+        var term = await _termRepository.GetByIdAsync(termId);
         if (term == null) return null;
         
         return MapToDto(term);
@@ -37,7 +43,7 @@ public class TermService : ITermService
 
     public async Task<Guid> CreateTermAsync(TermDTO dto)
     {
-        if (await _context.Terms.AnyAsync(t => t.Code == dto.Code))
+        if (await _termRepository.Entities.AnyAsync(t => t.Code == dto.Code))
             throw new Exception("Term code already exists.");
 
         if (dto.EndDate <= dto.StartDate)
@@ -54,18 +60,18 @@ public class TermService : ITermService
             IsActive = dto.IsActive
         };
 
-        _context.Terms.Add(term);
-        await _context.SaveChangesAsync();
+        await _termRepository.AddAsync(term);
+        await _termRepository.SaveChangesAsync();
 
         return term.TermId;
     }
 
     public async Task<bool> UpdateTermAsync(TermDTO dto)
     {
-        var term = await _context.Terms.FindAsync(dto.TermId);
+        var term = await _termRepository.GetByIdAsync(dto.TermId);
         if (term == null) return false;
 
-        if (term.Code != dto.Code && await _context.Terms.AnyAsync(t => t.Code == dto.Code))
+        if (term.Code != dto.Code && await _termRepository.Entities.AnyAsync(t => t.Code == dto.Code))
             throw new Exception("Term code already exists.");
 
         if (dto.EndDate <= dto.StartDate)
@@ -77,23 +83,23 @@ public class TermService : ITermService
         term.EndDate = DateTime.SpecifyKind(dto.EndDate, DateTimeKind.Utc);
         term.IsActive = dto.IsActive;
 
-        _context.Terms.Update(term);
-        await _context.SaveChangesAsync();
+        _termRepository.Update(term);
+        await _termRepository.SaveChangesAsync();
 
         return true;
     }
 
     public async Task<bool> DeleteTermAsync(Guid termId)
     {
-        var term = await _context.Terms.FindAsync(termId);
+        var term = await _termRepository.GetByIdAsync(termId);
         if (term == null) return false;
 
         // Optionally check if term is used in sections or calendars before deleting
-        var isUsed = await _context.AcademicCalendars.AnyAsync(c => c.TermId == termId);
+        var isUsed = await _academicCalendarRepository.Entities.AnyAsync(c => c.TermId == termId);
         if (isUsed) throw new Exception("Cannot delete a term that has generated academic calendars. Please remove associated classes first.");
 
-        _context.Terms.Remove(term);
-        await _context.SaveChangesAsync();
+        _termRepository.Remove(term);
+        await _termRepository.SaveChangesAsync();
 
         return true;
     }

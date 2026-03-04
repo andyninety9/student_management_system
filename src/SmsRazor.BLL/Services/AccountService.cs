@@ -7,14 +7,26 @@ using SmsRazor.BLL.DTOs;
 using SmsRazor.DAL.Data;
 using SmsRazor.DAL.Entities;
 
+using SmsRazor.DAL.Repositories;
+
 namespace SmsRazor.BLL.Services;
 
 public class AccountService : IAccountService
 {
+    private readonly IRepository<Account> _accountRepository;
+    private readonly IRepository<Role> _roleRepository;
+    private readonly IRepository<StudentInfo> _studentInfoRepository;
     private readonly SmsDbContext _context;
 
-    public AccountService(SmsDbContext context)
+    public AccountService(
+        IRepository<Account> accountRepository,
+        IRepository<Role> roleRepository,
+        IRepository<StudentInfo> studentInfoRepository,
+        SmsDbContext context)
     {
+        _accountRepository = accountRepository;
+        _roleRepository = roleRepository;
+        _studentInfoRepository = studentInfoRepository;
         _context = context;
     }
 
@@ -29,11 +41,11 @@ public class AccountService : IAccountService
             // Logging or handling for migration exception
         }
 
-        bool hasAnyAccount = await _context.Accounts.AnyAsync();
+        bool hasAnyAccount = await _accountRepository.Entities.AnyAsync();
         if (!hasAnyAccount)
         {
             // Ensure Root Role
-            var rootRole = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Root");
+            var rootRole = await _roleRepository.Entities.FirstOrDefaultAsync(r => r.RoleName == "Root");
             if (rootRole == null)
             {
                 rootRole = new Role
@@ -42,11 +54,11 @@ public class AccountService : IAccountService
                     RoleName = "Root",
                     IsActive = true
                 };
-                _context.Roles.Add(rootRole);
+                await _roleRepository.AddAsync(rootRole);
             }
 
             // Ensure Admin Role
-            var adminRole = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Admin");
+            var adminRole = await _roleRepository.Entities.FirstOrDefaultAsync(r => r.RoleName == "Admin");
             if (adminRole == null)
             {
                 adminRole = new Role
@@ -55,7 +67,7 @@ public class AccountService : IAccountService
                     RoleName = "Admin",
                     IsActive = true
                 };
-                _context.Roles.Add(adminRole);
+                await _roleRepository.AddAsync(adminRole);
             }
 
             // Create Root Account
@@ -70,20 +82,20 @@ public class AccountService : IAccountService
                 IsActive = true,
                 EmailVerified = true
             };
-            _context.Accounts.Add(rootAccount);
+            await _accountRepository.AddAsync(rootAccount);
             
-            await _context.SaveChangesAsync();
+            await _accountRepository.SaveChangesAsync();
         }
     }
 
     public async Task<bool> IsEmailRegisteredAsync(string email)
     {
-        return await _context.Accounts.AnyAsync(a => a.Username == email || a.Email == email);
+        return await _accountRepository.Entities.AnyAsync(a => a.Username == email || a.Email == email);
     }
 
     public async Task RegisterAdminAsync(string email, string password, string fullName)
     {
-        var adminRole = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Admin");
+        var adminRole = await _roleRepository.Entities.FirstOrDefaultAsync(r => r.RoleName == "Admin");
         if (adminRole == null)
         {
             adminRole = new Role
@@ -92,8 +104,8 @@ public class AccountService : IAccountService
                 RoleName = "Admin",
                 IsActive = true
             };
-            _context.Roles.Add(adminRole);
-            await _context.SaveChangesAsync();
+            await _roleRepository.AddAsync(adminRole);
+            await _roleRepository.SaveChangesAsync();
         }
 
         var newAdmin = new Account
@@ -109,13 +121,13 @@ public class AccountService : IAccountService
             EmailVerified = false
         };
 
-        _context.Accounts.Add(newAdmin);
-        await _context.SaveChangesAsync();
+        await _accountRepository.AddAsync(newAdmin);
+        await _accountRepository.SaveChangesAsync();
     }
 
     public async Task<LoginResult> LoginAsync(string email, string password)
     {
-        var account = await _context.Accounts
+        var account = await _accountRepository.Entities
             .Include(a => a.Role)
             .FirstOrDefaultAsync(a => a.Username == email || a.Email == email);
 
@@ -140,7 +152,7 @@ public class AccountService : IAccountService
         
         if (result.RoleName == "Student")
         {
-            var studentInfo = await _context.StudentInfos.FirstOrDefaultAsync(s => s.AccountId == account.AccountId);
+            var studentInfo = await _studentInfoRepository.Entities.FirstOrDefaultAsync(s => s.AccountId == account.AccountId);
             if (studentInfo != null)
             {
                 result.StudentCode = studentInfo.StudentCode;

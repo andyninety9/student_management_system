@@ -7,26 +7,38 @@ using SmsRazor.BLL.DTOs;
 using SmsRazor.DAL.Data;
 using SmsRazor.DAL.Entities;
 
+using SmsRazor.DAL.Repositories;
+
 namespace SmsRazor.BLL.Services;
 
 public class EnrollmentService : IEnrollmentService
 {
-    private readonly SmsDbContext _context;
+    private readonly IRepository<StudentInfo> _studentInfoRepository;
+    private readonly IRepository<SyllabusCourse> _syllabusCourseRepository;
+    private readonly IRepository<Section> _sectionRepository;
+    private readonly IRepository<Enrollment> _enrollmentRepository;
 
-    public EnrollmentService(SmsDbContext context)
+    public EnrollmentService(
+        IRepository<StudentInfo> studentInfoRepository,
+        IRepository<SyllabusCourse> syllabusCourseRepository,
+        IRepository<Section> sectionRepository,
+        IRepository<Enrollment> enrollmentRepository)
     {
-        _context = context;
+        _studentInfoRepository = studentInfoRepository;
+        _syllabusCourseRepository = syllabusCourseRepository;
+        _sectionRepository = sectionRepository;
+        _enrollmentRepository = enrollmentRepository;
     }
 
     public async Task<IEnumerable<CourseDTO>> GetStudentSyllabusCoursesAsync(string studentCode, Guid? termId = null)
     {
-        var student = await _context.StudentInfos
+        var student = await _studentInfoRepository.Entities
             .AsNoTracking()
             .FirstOrDefaultAsync(s => s.StudentCode == studentCode);
 
         if (student == null) return new List<CourseDTO>();
 
-        var query = _context.SyllabusCourses
+        var query = _syllabusCourseRepository.Entities
             .Include(sc => sc.Course)
             .Where(sc => sc.SyllabusId == student.SyllabusId);
 
@@ -41,7 +53,7 @@ public class EnrollmentService : IEnrollmentService
                     CourseNameVI = sc.Course.CourseNameVI,
                     CreditNumber = sc.Course.CreditNumber,
                     IsActive = sc.Course.IsActive,
-                    HasAvailableSections = _context.Sections.Any(s => s.CourseId == sc.Course.CourseId && s.Status == true && s.Calendars.Any(c => c.TermId == tid) && (s.Capacity - _context.Enrollments.Count(e => e.SectionId == s.SectionId)) > 0)
+                    HasAvailableSections = _sectionRepository.Entities.Any(s => s.CourseId == sc.Course.CourseId && s.Status == true && s.Calendars.Any(c => c.TermId == tid) && (s.Capacity - _enrollmentRepository.Entities.Count(e => e.SectionId == s.SectionId)) > 0)
                 })
                 .ToListAsync();
 
@@ -67,7 +79,7 @@ public class EnrollmentService : IEnrollmentService
 
     public async Task<IEnumerable<SectionDTO>> GetAvailableSectionsForCourseAsync(Guid courseId, Guid termId)
     {
-        var sections = await _context.Sections
+        var sections = await _sectionRepository.Entities
             .Include(s => s.TeacherAssignment)
             .Include(s => s.TeacherAssignment!.TeacherInfo!.Account)
             .Include(s => s.Calendars)
@@ -76,7 +88,7 @@ public class EnrollmentService : IEnrollmentService
             {
                 Section = s,
                 TeacherName = s.TeacherAssignment!.TeacherInfo!.Account!.Fullname,
-                EnrollmentCount = _context.Enrollments.Count(e => e.SectionId == s.SectionId),
+                EnrollmentCount = _enrollmentRepository.Entities.Count(e => e.SectionId == s.SectionId),
                 Calendars = s.Calendars.Where(c => c.TermId == termId).ToList()
             })
             .ToListAsync();
@@ -108,7 +120,7 @@ public class EnrollmentService : IEnrollmentService
 
     public async Task<IEnumerable<EnrollmentDTO>> GetStudentEnrollmentsByTermAsync(string studentCode, Guid termId)
     {
-        var enrollments = await _context.Enrollments
+        var enrollments = await _enrollmentRepository.Entities
             .Include(e => e.Section).ThenInclude(s => s!.Course)
             .Include(e => e.Section).ThenInclude(s => s!.TeacherAssignment).ThenInclude(ta => ta!.TeacherInfo).ThenInclude(ti => ti!.Account)
             // Join with Calendars to filter by Term
@@ -134,7 +146,7 @@ public class EnrollmentService : IEnrollmentService
     public async Task<(bool IsSuccess, string ErrorMessage)> RegisterForSectionAsync(string studentCode, Guid sectionId)
     {
         // 1. Get the section and determine its Term
-        var section = await _context.Sections
+        var section = await _sectionRepository.Entities
             .Include(s => s.Calendars)
             .FirstOrDefaultAsync(s => s.SectionId == sectionId);
 
@@ -146,17 +158,17 @@ public class EnrollmentService : IEnrollmentService
             return (false, "Section is not properly scheduled in any Term.");
 
         // 2. Check Capacity
-        var currentEnrollmentsCount = await _context.Enrollments.CountAsync(e => e.SectionId == sectionId);
+        var currentEnrollmentsCount = await _enrollmentRepository.Entities.CountAsync(e => e.SectionId == sectionId);
         if (currentEnrollmentsCount >= section.Capacity)
             return (false, "This section is already full.");
 
         // 3. Check exact duplicates
-        var exists = await _context.Enrollments.AnyAsync(e => e.StudentCode == studentCode && e.SectionId == sectionId);
+        var exists = await _enrollmentRepository.Entities.AnyAsync(e => e.StudentCode == studentCode && e.SectionId == sectionId);
         if (exists)
             return (false, "You are already registered for this section.");
 
         // 4. Fetch student's current enrollments for THIS term (to check max 5, and duplicate courses)
-        var studentTermEnrollments = await _context.Enrollments
+        var studentTermEnrollments = await _enrollmentRepository.Entities
             .Include(e => e.Section)
             .ThenInclude(s => s!.Calendars)
             .Where(e => e.StudentCode == studentCode && e.Section!.Calendars.Any(c => c.TermId == termId))
@@ -183,26 +195,26 @@ public class EnrollmentService : IEnrollmentService
             EnrollmentDate = DateTime.UtcNow
         };
 
-        _context.Enrollments.Add(enrollment);
-        await _context.SaveChangesAsync();
+        await _enrollmentRepository.AddAsync(enrollment);
+        await _enrollmentRepository.SaveChangesAsync();
         return (true, "Registered successfully.");
     }
 
     public async Task<bool> RemoveRegistrationAsync(string studentCode, Guid sectionId)
     {
-        var enrollment = await _context.Enrollments
+        var enrollment = await _enrollmentRepository.Entities
             .FirstOrDefaultAsync(e => e.StudentCode == studentCode && e.SectionId == sectionId);
 
         if (enrollment == null) return false;
 
-        _context.Enrollments.Remove(enrollment);
-        await _context.SaveChangesAsync();
+        _enrollmentRepository.Remove(enrollment);
+        await _enrollmentRepository.SaveChangesAsync();
         return true;
     }
 
     public async Task<IEnumerable<StudentScheduleDTO>> GetStudentTimetableAsync(string studentCode, Guid termId)
     {
-        var enrollments = await _context.Enrollments
+        var enrollments = await _enrollmentRepository.Entities
             .Include(e => e.Section).ThenInclude(s => s!.Course)
             .Include(e => e.Section).ThenInclude(s => s!.Calendars)
             .Where(e => e.StudentCode == studentCode && e.Section!.Calendars.Any(c => c.TermId == termId))

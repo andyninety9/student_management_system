@@ -7,20 +7,26 @@ using SmsRazor.BLL.DTOs;
 using SmsRazor.DAL.Data;
 using SmsRazor.DAL.Entities;
 
+using SmsRazor.DAL.Repositories;
+
 namespace SmsRazor.BLL.Services;
 
 public class CourseService : ICourseService
 {
-    private readonly SmsDbContext _context;
+    private readonly IRepository<Course> _courseRepository;
+    private readonly IRepository<CoursePrerequisite> _coursePrerequisiteRepository;
 
-    public CourseService(SmsDbContext context)
+    public CourseService(
+        IRepository<Course> courseRepository,
+        IRepository<CoursePrerequisite> coursePrerequisiteRepository)
     {
-        _context = context;
+        _courseRepository = courseRepository;
+        _coursePrerequisiteRepository = coursePrerequisiteRepository;
     }
 
     public async Task<IEnumerable<KeyValuePair<Guid, string>>> GetCoursesLookupAsync()
     {
-        var courses = await _context.Courses
+        var courses = await _courseRepository.Entities
             .Where(c => c.IsActive)
             .OrderBy(c => c.CourseNameEng)
             .ToListAsync();
@@ -31,7 +37,7 @@ public class CourseService : ICourseService
 
     public async Task<IEnumerable<CourseDTO>> GetAllCoursesAsync()
     {
-        var courses = await _context.Courses
+        var courses = await _courseRepository.Entities
             .OrderByDescending(c => c.CreatedAt)
             .ToListAsync();
 
@@ -49,7 +55,7 @@ public class CourseService : ICourseService
 
     public async Task<CourseDTO?> GetCourseByIdAsync(Guid courseId)
     {
-        var course = await _context.Courses
+        var course = await _courseRepository.Entities
             .Include(c => c.Prerequisites)
             .FirstOrDefaultAsync(c => c.CourseId == courseId);
 
@@ -86,15 +92,15 @@ public class CourseService : ICourseService
             }).ToList() : new List<CoursePrerequisite>()
         };
 
-        _context.Courses.Add(course);
-        await _context.SaveChangesAsync();
+        await _courseRepository.AddAsync(course);
+        await _courseRepository.SaveChangesAsync();
 
         return course.CourseId;
     }
 
     public async Task<bool> UpdateCourseAsync(CourseDTO dto)
     {
-        var course = await _context.Courses
+        var course = await _courseRepository.Entities
             .Include(c => c.Prerequisites)
             .FirstOrDefaultAsync(c => c.CourseId == dto.CourseId);
             
@@ -109,7 +115,7 @@ public class CourseService : ICourseService
         
         // Update prerequisites
         var existingPrerequisites = course.Prerequisites.ToList();
-        _context.CoursePrerequisites.RemoveRange(existingPrerequisites);
+        _coursePrerequisiteRepository.RemoveRange(existingPrerequisites);
         course.Prerequisites.Clear();
         
         if (dto.PrerequisiteCourseIds != null && dto.PrerequisiteCourseIds.Any())
@@ -121,7 +127,7 @@ public class CourseService : ICourseService
                 PrerequisiteCourseId = pid
             }).ToList();
             
-            _context.CoursePrerequisites.AddRange(newPrereqs);
+            await _coursePrerequisiteRepository.AddRangeAsync(newPrereqs);
             
             // To ensure navigation property is up-to-date in memory
             foreach(var np in newPrereqs)
@@ -131,19 +137,19 @@ public class CourseService : ICourseService
         }
         
         // UpdatedAt is handled automatically by DbContext SaveChangesAsync override
-        // Removed "_context.Courses.Update(course);" because it marks un-tracked navigation properties as Modified instead of Added, causing a DbUpdateConcurrencyException on newly generated primary keys.
-        await _context.SaveChangesAsync();
+        // Removed "_courseRepository.Update(course);" because it marks un-tracked navigation properties as Modified instead of Added, causing a DbUpdateConcurrencyException on newly generated primary keys.
+        await _courseRepository.SaveChangesAsync();
 
         return true;
     }
 
     public async Task<bool> DeleteCourseAsync(Guid courseId)
     {
-        var course = await _context.Courses.FindAsync(courseId);
+        var course = await _courseRepository.GetByIdAsync(courseId);
         if (course == null) return false;
 
-        _context.Courses.Remove(course);
-        await _context.SaveChangesAsync();
+        _courseRepository.Remove(course);
+        await _courseRepository.SaveChangesAsync();
 
         return true;
     }

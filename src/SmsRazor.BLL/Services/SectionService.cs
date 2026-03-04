@@ -7,20 +7,38 @@ using SmsRazor.BLL.DTOs;
 using SmsRazor.DAL.Data;
 using SmsRazor.DAL.Entities;
 
+using SmsRazor.DAL.Repositories;
+
 namespace SmsRazor.BLL.Services;
 
 public class SectionService : ISectionService
 {
-    private readonly SmsDbContext _context;
+    private readonly IRepository<Section> _sectionRepository;
+    private readonly IRepository<Term> _termRepository;
+    private readonly IRepository<Course> _courseRepository;
+    private readonly IRepository<TeacherInfo> _teacherInfoRepository;
+    private readonly IRepository<TeacherAssignment> _teacherAssignmentRepository;
+    private readonly IRepository<AcademicCalendar> _academicCalendarRepository;
 
-    public SectionService(SmsDbContext context)
+    public SectionService(
+        IRepository<Section> sectionRepository,
+        IRepository<Term> termRepository,
+        IRepository<Course> courseRepository,
+        IRepository<TeacherInfo> teacherInfoRepository,
+        IRepository<TeacherAssignment> teacherAssignmentRepository,
+        IRepository<AcademicCalendar> academicCalendarRepository)
     {
-        _context = context;
+        _sectionRepository = sectionRepository;
+        _termRepository = termRepository;
+        _courseRepository = courseRepository;
+        _teacherInfoRepository = teacherInfoRepository;
+        _teacherAssignmentRepository = teacherAssignmentRepository;
+        _academicCalendarRepository = academicCalendarRepository;
     }
 
     public async Task<IEnumerable<SectionDTO>> GetAllSectionsAsync()
     {
-        var sections = await _context.Sections
+        var sections = await _sectionRepository.Entities
             .Include(s => s.Course)
             .Include(s => s.TeacherAssignment).ThenInclude(ta => ta!.TeacherInfo).ThenInclude(ti => ti!.Account)
             .Include(s => s.Calendars).ThenInclude(c => c.Term)
@@ -45,7 +63,7 @@ public class SectionService : ISectionService
 
     public async Task<SectionDTO?> GetSectionByIdAsync(Guid sectionId)
     {
-        var s = await _context.Sections
+        var s = await _sectionRepository.Entities
             .Include(s => s.Course)
             .Include(s => s.TeacherAssignment).ThenInclude(ta => ta!.TeacherInfo).ThenInclude(ti => ti!.Account)
             .Include(s => s.Calendars).ThenInclude(c => c.Term)
@@ -72,16 +90,16 @@ public class SectionService : ISectionService
     public async Task<Guid> CreateSectionAndScheduleAsync(ScheduleGenerationDTO dto)
     {
         // 1. Basic validation
-        var term = await _context.Terms.FindAsync(dto.TermId);
+        var term = await _termRepository.GetByIdAsync(dto.TermId);
         if (term == null) throw new Exception("Invalid Term.");
 
-        var course = await _context.Courses.FindAsync(dto.CourseId);
+        var course = await _courseRepository.GetByIdAsync(dto.CourseId);
         if (course == null) throw new Exception("Invalid Course.");
 
-        var teacher = await _context.TeacherInfos.FirstOrDefaultAsync(t => t.TeacherCode == dto.TeacherCode);
+        var teacher = await _teacherInfoRepository.Entities.FirstOrDefaultAsync(t => t.TeacherCode == dto.TeacherCode);
         if (teacher == null) throw new Exception("Invalid Primary Teacher.");
 
-        if (await _context.Sections.AnyAsync(s => s.SectionCode == dto.SectionCode && s.CourseId == dto.CourseId))
+        if (await _sectionRepository.Entities.AnyAsync(s => s.SectionCode == dto.SectionCode && s.CourseId == dto.CourseId))
             throw new Exception("Section code already exists for this course.");
 
         // 2. Create TeacherAssignment
@@ -89,7 +107,7 @@ public class SectionService : ISectionService
         {
             TeacherCode = dto.TeacherCode
         };
-        _context.TeacherAssignments.Add(assignment);
+        await _teacherAssignmentRepository.AddAsync(assignment);
 
         // 3. Create Section
         var sectionId = Guid.NewGuid();
@@ -102,7 +120,7 @@ public class SectionService : ISectionService
             Capacity = dto.Capacity,
             Status = true
         };
-        _context.Sections.Add(section);
+        await _sectionRepository.AddAsync(section);
 
         // 4. Generate Timetable (AcademicCalendars)
         // Ensure to preserve universal time correctly since Postgres timestamp with timezone expects UTC
@@ -128,7 +146,7 @@ public class SectionService : ISectionService
                 var matchSetting = selectedDays.FirstOrDefault(d => d.DayOfWeek == checkDate.DayOfWeek);
                 if (matchSetting != null)
                 {
-                    _context.AcademicCalendars.Add(new AcademicCalendar
+                    await _academicCalendarRepository.AddAsync(new AcademicCalendar
                     {
                         TermId = term.TermId,
                         SectionId = sectionId,
@@ -151,46 +169,46 @@ public class SectionService : ISectionService
             }
         }
 
-        await _context.SaveChangesAsync();
+        await _sectionRepository.SaveChangesAsync();
         return sectionId;
     }
 
     public async Task<bool> DeleteSectionAsync(Guid sectionId)
     {
-        var section = await _context.Sections
+        var section = await _sectionRepository.Entities
             .Include(s => s.TeacherAssignment)
             .Include(s => s.Calendars)
             .FirstOrDefaultAsync(s => s.SectionId == sectionId);
 
         if (section == null) return false;
 
-        _context.AcademicCalendars.RemoveRange(section.Calendars);
-        _context.Sections.Remove(section);
+        _academicCalendarRepository.RemoveRange(section.Calendars);
+        _sectionRepository.Remove(section);
         
         if (section.TeacherAssignment != null)
         {
-             _context.TeacherAssignments.Remove(section.TeacherAssignment);
+             _teacherAssignmentRepository.Remove(section.TeacherAssignment);
         }
 
-        await _context.SaveChangesAsync();
+        await _sectionRepository.SaveChangesAsync();
         return true;
     }
 
     public async Task<IEnumerable<KeyValuePair<Guid, string>>> GetTermsLookupAsync()
     {
-        var terms = await _context.Terms.OrderByDescending(t => t.IsActive).ThenByDescending(t => t.StartDate).ToListAsync();
+        var terms = await _termRepository.Entities.OrderByDescending(t => t.IsActive).ThenByDescending(t => t.StartDate).ToListAsync();
         return terms.Select(t => new KeyValuePair<Guid, string>(t.TermId, t.Name + (t.IsActive ? " (Active)" : "")));
     }
 
     public async Task<IEnumerable<KeyValuePair<Guid, string>>> GetCoursesLookupAsync()
     {
-        var courses = await _context.Courses.Where(c => c.IsActive).OrderBy(c => c.CourseNameEng).ToListAsync();
+        var courses = await _courseRepository.Entities.Where(c => c.IsActive).OrderBy(c => c.CourseNameEng).ToListAsync();
         return courses.Select(c => new KeyValuePair<Guid, string>(c.CourseId, $"{c.CourseNameEng}"));
     }
 
     public async Task<IEnumerable<KeyValuePair<string, string>>> GetTeachersLookupAsync()
     {
-         var teachers = await _context.TeacherInfos
+         var teachers = await _teacherInfoRepository.Entities
              .Include(t => t.Account)
              .OrderBy(t => t.TeacherCode)
              .ToListAsync();
@@ -199,7 +217,7 @@ public class SectionService : ISectionService
 
     public async Task<IEnumerable<TeacherScheduleDTO>> GetTeacherScheduleAsync(string teacherCode, Guid termId)
     {
-        var calendars = await _context.AcademicCalendars
+        var calendars = await _academicCalendarRepository.Entities
             .Include(c => c.Section).ThenInclude(s => s!.Course)
             .Include(c => c.Section).ThenInclude(s => s!.TeacherAssignment)
             .Where(c => c.TermId == termId && c.Section != null && c.Section.TeacherAssignment != null && c.Section.TeacherAssignment.TeacherCode == teacherCode && c.IsActive)

@@ -8,20 +8,26 @@ using SmsRazor.BLL.Helpers;
 using SmsRazor.DAL.Data;
 using SmsRazor.DAL.Entities;
 
+using SmsRazor.DAL.Repositories;
+
 namespace SmsRazor.BLL.Services;
 
 public class TuitionService : ITuitionService
 {
-    private readonly SmsDbContext _context;
+    private readonly IRepository<Enrollment> _enrollmentRepository;
+    private readonly IRepository<TuitionPayment> _tuitionPaymentRepository;
 
-    public TuitionService(SmsDbContext context)
+    public TuitionService(
+        IRepository<Enrollment> enrollmentRepository,
+        IRepository<TuitionPayment> tuitionPaymentRepository)
     {
-        _context = context;
+        _enrollmentRepository = enrollmentRepository;
+        _tuitionPaymentRepository = tuitionPaymentRepository;
     }
 
     public async Task<TuitionSummaryDTO> GetTuitionSummaryAsync(string studentCode, Guid termId)
     {
-        var enrollments = await _context.Enrollments
+        var enrollments = await _enrollmentRepository.Entities
             .Include(e => e.Section)
                 .ThenInclude(s => s!.Course)
             .Where(e => e.StudentCode == studentCode && e.Section!.Calendars.Any(c => c.TermId == termId))
@@ -36,13 +42,13 @@ public class TuitionService : ITuitionService
 
         var totalAmount = courses.Sum(c => c.TuitionFee);
 
-        var totalPaidAmount = await _context.TuitionPayments
+        var totalPaidAmount = await _tuitionPaymentRepository.Entities
             .Where(p => p.StudentCode == studentCode && p.TermId == termId && p.Status == PaymentStatus.Success)
             .SumAsync(p => p.Amount);
 
         var remainingBalance = totalAmount - totalPaidAmount;
 
-        var payment = await _context.TuitionPayments
+        var payment = await _tuitionPaymentRepository.Entities
             .OrderByDescending(p => p.CreatedAt)
             .FirstOrDefaultAsync(p => p.StudentCode == studentCode && p.TermId == termId);
 
@@ -80,8 +86,8 @@ public class TuitionService : ITuitionService
             Amount = amount,
             Status = PaymentStatus.Pending
         };
-        _context.TuitionPayments.Add(payment);
-        await _context.SaveChangesAsync();
+        await _tuitionPaymentRepository.AddAsync(payment);
+        await _tuitionPaymentRepository.SaveChangesAsync();
 
         var vnpay = new VnPayLibrary();
         
@@ -139,7 +145,7 @@ public class TuitionService : ITuitionService
         {
             if (!Guid.TryParse(vnp_orderId, out Guid paymentId)) return false;
 
-            var paymentRecord = await _context.TuitionPayments.FindAsync(paymentId);
+            var paymentRecord = await _tuitionPaymentRepository.GetByIdAsync(paymentId);
             if (paymentRecord != null)
             {
                 if (vnp_ResponseCode == "00")
@@ -153,7 +159,8 @@ public class TuitionService : ITuitionService
                     paymentRecord.VnPayTransactionId = vnp_TransactionId;
                 }
                 
-                await _context.SaveChangesAsync();
+                _tuitionPaymentRepository.Update(paymentRecord);
+                await _tuitionPaymentRepository.SaveChangesAsync();
                 return paymentRecord.Status == PaymentStatus.Success;
             }
         }

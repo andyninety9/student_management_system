@@ -6,20 +6,26 @@ using Microsoft.EntityFrameworkCore;
 using SmsRazor.DAL.Data;
 using SmsRazor.DAL.Entities;
 
+using SmsRazor.DAL.Repositories;
+
 namespace SmsRazor.BLL.Services;
 
 public class ChatService : IChatService
 {
-    private readonly SmsDbContext _context;
+    private readonly IRepository<Conversation> _conversationRepository;
+    private readonly IRepository<Message> _messageRepository;
 
-    public ChatService(SmsDbContext context)
+    public ChatService(
+        IRepository<Conversation> conversationRepository,
+        IRepository<Message> messageRepository)
     {
-        _context = context;
+        _conversationRepository = conversationRepository;
+        _messageRepository = messageRepository;
     }
 
     public async Task<List<Conversation>> GetUserConversationsAsync(Guid userId)
     {
-        return await _context.Conversations
+        return await _conversationRepository.Entities
             .Include(c => c.UserAccount1)
             .Include(c => c.UserAccount2)
             .Include(c => c.Messages.OrderByDescending(m => m.CreatedAt).Take(1)) // Get latest message for preview
@@ -31,7 +37,7 @@ public class ChatService : IChatService
 
     public async Task<Conversation?> GetConversationAsync(Guid conversationId)
     {
-        return await _context.Conversations
+        return await _conversationRepository.Entities
             .Include(c => c.UserAccount1)
             .Include(c => c.UserAccount2)
             .FirstOrDefaultAsync(c => c.ConversationId == conversationId);
@@ -39,7 +45,7 @@ public class ChatService : IChatService
 
     public async Task<Conversation> GetOrCreateConversationAsync(Guid user1Id, Guid user2Id)
     {
-        var existingConversation = await _context.Conversations
+        var existingConversation = await _conversationRepository.Entities
             .FirstOrDefaultAsync(c => 
                 (c.UserAccountId1 == user1Id && c.UserAccountId2 == user2Id) ||
                 (c.UserAccountId1 == user2Id && c.UserAccountId2 == user1Id));
@@ -56,8 +62,8 @@ public class ChatService : IChatService
             UserAccountId2 = user2Id
         };
 
-        _context.Conversations.Add(newConversation);
-        await _context.SaveChangesAsync();
+        await _conversationRepository.AddAsync(newConversation);
+        await _conversationRepository.SaveChangesAsync();
         
         return newConversation;
     }
@@ -75,15 +81,15 @@ public class ChatService : IChatService
             CreatedAt = DateTime.UtcNow
         };
 
-        _context.Messages.Add(message);
-        await _context.SaveChangesAsync();
+        await _messageRepository.AddAsync(message);
+        await _messageRepository.SaveChangesAsync();
 
         return message;
     }
 
     public async Task<List<Message>> GetConversationMessagesAsync(Guid conversationId, int skip = 0, int take = 50)
     {
-        return await _context.Messages
+        return await _messageRepository.Entities
             .Include(m => m.Sender)
             .Where(m => m.ConversationId == conversationId)
             .OrderByDescending(m => m.CreatedAt) // Get newest first
@@ -94,20 +100,21 @@ public class ChatService : IChatService
 
     public async Task<Message?> EditMessageAsync(Guid messageId, Guid userId, string newContent)
     {
-        var message = await _context.Messages.FirstOrDefaultAsync(m => m.MessageId == messageId && m.SenderId == userId);
+        var message = await _messageRepository.Entities.FirstOrDefaultAsync(m => m.MessageId == messageId && m.SenderId == userId);
         if (message == null || message.Type != MessageType.Text || message.IsDeleted) return null;
 
         message.Content = newContent;
         message.IsEdited = true;
         message.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
+        _messageRepository.Update(message);
+        await _messageRepository.SaveChangesAsync();
         return message;
     }
 
     public async Task<bool> DeleteMessageAsync(Guid messageId, Guid userId)
     {
-        var message = await _context.Messages.FirstOrDefaultAsync(m => m.MessageId == messageId && m.SenderId == userId);
+        var message = await _messageRepository.Entities.FirstOrDefaultAsync(m => m.MessageId == messageId && m.SenderId == userId);
         if (message == null || message.IsDeleted) return false;
 
         message.IsDeleted = true;
@@ -124,7 +131,8 @@ public class ChatService : IChatService
             message.FileName = "Deleted File";
         }
 
-        await _context.SaveChangesAsync();
+        _messageRepository.Update(message);
+        await _messageRepository.SaveChangesAsync();
         return true;
     }
 }

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SmsRazor.BLL.Services;
 using SmsRazor.DAL.Data;
+using SmsRazor.DAL.Repositories;
 
 namespace SmsRazor.BLL;
 
@@ -11,6 +12,9 @@ public static class DependencyInjection
     {
         services.AddDbContext<SmsDbContext>(options =>
             options.UseNpgsql(connectionString));
+
+        services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+
 
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<ICourseService, CourseService>();

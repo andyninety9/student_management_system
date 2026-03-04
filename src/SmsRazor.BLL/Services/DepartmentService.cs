@@ -7,20 +7,22 @@ using SmsRazor.BLL.DTOs;
 using SmsRazor.DAL.Data;
 using SmsRazor.DAL.Entities;
 
+using SmsRazor.DAL.Repositories;
+
 namespace SmsRazor.BLL.Services;
 
 public class DepartmentService : IDepartmentService
 {
-    private readonly SmsDbContext _context;
+    private readonly IRepository<Department> _departmentRepository;
 
-    public DepartmentService(SmsDbContext context)
+    public DepartmentService(IRepository<Department> departmentRepository)
     {
-        _context = context;
+        _departmentRepository = departmentRepository;
     }
 
     public async Task<IEnumerable<DepartmentDTO>> GetAllDepartmentsAsync()
     {
-        var departments = await _context.Departments
+        var departments = await _departmentRepository.Entities
             .OrderByDescending(d => d.CreatedAt)
             .ToListAsync();
 
@@ -36,7 +38,7 @@ public class DepartmentService : IDepartmentService
 
     public async Task<DepartmentDTO?> GetDepartmentByIdAsync(Guid departmentId)
     {
-        var department = await _context.Departments.FindAsync(departmentId);
+        var department = await _departmentRepository.GetByIdAsync(departmentId);
         if (department == null) return null;
 
         return new DepartmentDTO
@@ -60,15 +62,15 @@ public class DepartmentService : IDepartmentService
             IsActive = dto.IsActive
         };
 
-        _context.Departments.Add(department);
-        await _context.SaveChangesAsync();
+        await _departmentRepository.AddAsync(department);
+        await _departmentRepository.SaveChangesAsync();
         
         return department.DepartmentId;
     }
 
     public async Task<bool> UpdateDepartmentAsync(DepartmentDTO dto)
     {
-        var department = await _context.Departments.FindAsync(dto.DepartmentId);
+        var department = await _departmentRepository.GetByIdAsync(dto.DepartmentId);
         if (department == null) return false;
 
         department.DepartmentNameEng = dto.DepartmentNameEng;
@@ -76,19 +78,19 @@ public class DepartmentService : IDepartmentService
         department.TotalCredit = dto.TotalCredit;
         department.IsActive = dto.IsActive;
 
-        _context.Departments.Update(department);
-        await _context.SaveChangesAsync();
+        _departmentRepository.Update(department);
+        await _departmentRepository.SaveChangesAsync();
 
         return true;
     }
 
     public async Task<bool> DeleteDepartmentAsync(Guid departmentId)
     {
-        var department = await _context.Departments.FindAsync(departmentId);
+        var department = await _departmentRepository.GetByIdAsync(departmentId);
         if (department == null) return false;
 
-        _context.Departments.Remove(department);
-        await _context.SaveChangesAsync();
+        _departmentRepository.Remove(department);
+        await _departmentRepository.SaveChangesAsync();
 
         return true;
     }
