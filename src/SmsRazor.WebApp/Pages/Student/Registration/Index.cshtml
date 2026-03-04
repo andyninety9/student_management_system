@@ -202,6 +202,7 @@
         // Store selected term and student info globally for JS
         const currentTermId = '@Model.SelectedTermId';
         const currentStudentCode = '@Model.StudentCode';
+        const termStartDate = '@Model.TermStartDateIso';
         
         let calendar;
 
@@ -217,6 +218,7 @@
             
             calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'timeGridWeek',
+                initialDate: termStartDate ? termStartDate : undefined,
                 headerToolbar: {
                     left: '',
                     center: '',

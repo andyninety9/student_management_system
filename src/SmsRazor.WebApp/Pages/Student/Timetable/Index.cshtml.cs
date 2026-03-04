@@ -16,11 +16,13 @@ namespace SmsRazor.WebApp.Pages.Student.Timetable
     {
         private readonly IEnrollmentService _enrollmentService;
         private readonly ISectionService _sectionService;
+        private readonly ITermService _termService;
 
-        public IndexModel(IEnrollmentService enrollmentService, ISectionService sectionService)
+        public IndexModel(IEnrollmentService enrollmentService, ISectionService sectionService, ITermService termService)
         {
             _enrollmentService = enrollmentService;
             _sectionService = sectionService;
+            _termService = termService;
         }
 
         public string StudentCode { get; set; } = string.Empty;
@@ -29,6 +31,8 @@ namespace SmsRazor.WebApp.Pages.Student.Timetable
         public Guid SelectedTermId { get; set; }
         public SelectList TermsList { get; set; } = default!;
 
+        public string TermStartDateIso { get; set; } = string.Empty;
+
         public async Task<IActionResult> OnGetAsync()
         {
             var studentCodeClaim = User.FindFirst("StudentCode")?.Value;
@@ -36,6 +40,15 @@ namespace SmsRazor.WebApp.Pages.Student.Timetable
 
             var termsLookup = await _sectionService.GetTermsLookupAsync();
             TermsList = new SelectList(termsLookup, "Key", "Value");
+
+            if (SelectedTermId != Guid.Empty)
+            {
+                var term = await _termService.GetTermByIdAsync(SelectedTermId);
+                if (term != null)
+                {
+                    TermStartDateIso = term.StartDate.ToString("yyyy-MM-dd");
+                }
+            }
 
             return Page();
         }

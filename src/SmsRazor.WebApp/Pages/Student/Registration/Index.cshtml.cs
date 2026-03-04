@@ -16,11 +16,13 @@ namespace SmsRazor.WebApp.Pages.Student.Registration
     {
         private readonly IEnrollmentService _enrollmentService;
         private readonly ISectionService _sectionService; // Need to reuse to fetch Terms lookup
+        private readonly ITermService _termService;
 
-        public IndexModel(IEnrollmentService enrollmentService, ISectionService sectionService)
+        public IndexModel(IEnrollmentService enrollmentService, ISectionService sectionService, ITermService termService)
         {
             _enrollmentService = enrollmentService;
             _sectionService = sectionService;
+            _termService = termService;
         }
 
         public string StudentCode { get; set; } = string.Empty;
@@ -28,6 +30,8 @@ namespace SmsRazor.WebApp.Pages.Student.Registration
         [BindProperty(SupportsGet = true)]
         public Guid SelectedTermId { get; set; }
         public SelectList TermsList { get; set; } = default!;
+        
+        public string TermStartDateIso { get; set; } = string.Empty;
 
         public IEnumerable<CourseDTO> SyllabusCourses { get; set; } = new List<CourseDTO>();
         public IEnumerable<EnrollmentDTO> CurrentEnrollments { get; set; } = new List<EnrollmentDTO>();
@@ -67,6 +71,11 @@ namespace SmsRazor.WebApp.Pages.Student.Registration
 
                 if (SelectedTermId != Guid.Empty)
                 {
+                    var term = await _termService.GetTermByIdAsync(SelectedTermId);
+                    if (term != null)
+                    {
+                        TermStartDateIso = term.StartDate.ToString("yyyy-MM-dd");
+                    }
                     CurrentEnrollments = await _enrollmentService.GetStudentEnrollmentsByTermAsync(StudentCode, SelectedTermId);
                 }
             }
