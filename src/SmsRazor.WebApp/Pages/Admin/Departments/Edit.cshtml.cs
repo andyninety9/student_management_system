@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using SmsRazor.BLL.DTOs;
@@ -7,6 +8,7 @@ using SmsRazor.BLL.Services;
 
 namespace SmsRazor.WebApp.Pages.Admin.Departments;
 
+[Authorize(Roles = "Admin,Root")]
 public class EditModel : PageModel
 {
     private readonly IDepartmentService _departmentService;

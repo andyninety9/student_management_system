@@ -1,11 +1,13 @@
 using System;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using SmsRazor.BLL.Services;
 using SmsRazor.DAL.Entities;
 
 namespace SmsRazor.BLL.Hubs;
 
+[Authorize]
 public class ChatHub : Hub
 {
     private readonly IChatService _chatService;
@@ -106,6 +108,19 @@ public class ChatHub : Hub
 
     public async Task JoinConversation(Guid conversationId)
     {
+        var userIdString = Context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+        {
+            throw new HubException("Unauthorized");
+        }
+
+        var conversation = await _chatService.GetConversationAsync(conversationId);
+        if (conversation == null ||
+            (conversation.UserAccountId1 != userId && conversation.UserAccountId2 != userId))
+        {
+            throw new HubException("Access denied: you are not a participant of this conversation.");
+        }
+
         await Groups.AddToGroupAsync(Context.ConnectionId, conversationId.ToString());
     }
 

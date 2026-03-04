@@ -125,8 +125,7 @@ public class AccountService : IAccountService
         if (!account.IsActive)
             return new LoginResult { IsSuccess = false, ErrorMessage = "Account is disabled. Please contact the administrator." };
 
-        var hashedInputPassword = HashPassword(password);
-        if (account.PasswordHash != hashedInputPassword)
+        if (!VerifyPassword(password, account.PasswordHash))
             return new LoginResult { IsSuccess = false, ErrorMessage = "Invalid email or password." };
 
         var result = new LoginResult
@@ -150,10 +149,56 @@ public class AccountService : IAccountService
         return result;
     }
 
-    private string HashPassword(string password)
+    private const int PbkdfSaltSize = 16;
+    private const int PbkdfKeySize = 32;
+    private const int PbkdfIterations = 100_000;
+    private const byte PbkdfVersion = 1;
+
+    private static string HashPassword(string password)
     {
-        using var sha256 = SHA256.Create();
-        var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-        return Convert.ToBase64String(hashedBytes);
+        byte[] salt = new byte[PbkdfSaltSize];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(salt);
+
+        byte[] key = Rfc2898DeriveBytes.Pbkdf2(
+            password: Encoding.UTF8.GetBytes(password),
+            salt: salt,
+            iterations: PbkdfIterations,
+            hashAlgorithm: HashAlgorithmName.SHA256,
+            outputLength: PbkdfKeySize);
+
+        var result = new byte[1 + PbkdfSaltSize + PbkdfKeySize]; // version + salt + key
+        result[0] = PbkdfVersion;
+        Buffer.BlockCopy(salt, 0, result, 1, PbkdfSaltSize);
+        Buffer.BlockCopy(key, 0, result, 1 + PbkdfSaltSize, PbkdfKeySize);
+        return Convert.ToBase64String(result);
+    }
+
+    private static bool VerifyPassword(string password, string hash)
+    {
+        try
+        {
+            var hashBytes = Convert.FromBase64String(hash);
+            if (hashBytes.Length < 1 + PbkdfSaltSize + PbkdfKeySize || hashBytes[0] != PbkdfVersion) return false;
+
+            var salt = new byte[PbkdfSaltSize];
+            Buffer.BlockCopy(hashBytes, 1, salt, 0, PbkdfSaltSize);
+
+            var storedKey = new byte[PbkdfKeySize];
+            Buffer.BlockCopy(hashBytes, 1 + PbkdfSaltSize, storedKey, 0, PbkdfKeySize);
+
+            var key = Rfc2898DeriveBytes.Pbkdf2(
+                password: Encoding.UTF8.GetBytes(password),
+                salt: salt,
+                iterations: PbkdfIterations,
+                hashAlgorithm: HashAlgorithmName.SHA256,
+                outputLength: PbkdfKeySize);
+
+            return CryptographicOperations.FixedTimeEquals(key, storedKey);
+        }
+        catch
+        {
+            return false;
+        }
     }
 }

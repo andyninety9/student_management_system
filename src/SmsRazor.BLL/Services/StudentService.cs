@@ -92,7 +92,7 @@ public class StudentService : IStudentService
             AccountId = accountId,
             Username = dto.Email,
             Email = dto.Email,
-            PasswordHash = HashPassword(dto.Password ?? "123456"), // Default if not provided
+            PasswordHash = HashPassword(dto.Password ?? throw new ArgumentException("Password is required when creating a student account.")),
             Fullname = dto.Fullname,
             Gender = dto.Gender,
             Dob = dto.Dob.HasValue ? DateTime.SpecifyKind(dto.Dob.Value, DateTimeKind.Utc) : null,
@@ -302,10 +302,28 @@ public class StudentService : IStudentService
         };
     }
 
-    private string HashPassword(string password)
+    private const int PbkdfSaltSize = 16;
+    private const int PbkdfKeySize = 32;
+    private const int PbkdfIterations = 100_000;
+    private const byte PbkdfVersion = 1;
+
+    private static string HashPassword(string password)
     {
-        using var sha256 = SHA256.Create();
-        var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-        return Convert.ToBase64String(hashedBytes);
+        byte[] salt = new byte[PbkdfSaltSize];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(salt);
+
+        byte[] key = Rfc2898DeriveBytes.Pbkdf2(
+            password: Encoding.UTF8.GetBytes(password),
+            salt: salt,
+            iterations: PbkdfIterations,
+            hashAlgorithm: HashAlgorithmName.SHA256,
+            outputLength: PbkdfKeySize);
+
+        var result = new byte[1 + PbkdfSaltSize + PbkdfKeySize]; // version + salt + key
+        result[0] = PbkdfVersion;
+        Buffer.BlockCopy(salt, 0, result, 1, PbkdfSaltSize);
+        Buffer.BlockCopy(key, 0, result, 1 + PbkdfSaltSize, PbkdfKeySize);
+        return Convert.ToBase64String(result);
     }
 }
