@@ -1,11 +1,13 @@
 using System;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using SmsRazor.BLL.Services;
 
 namespace SmsRazor.BLL.Hubs;
 
+[Authorize]
 public class AssistantHub : Hub
 {
     private readonly IAssistantService _assistantService;

@@ -72,15 +72,20 @@ public class JwtCookieMiddleware
     {
         try
         {
+            var secret = _configuration["JWT_SECRET"];
+            if (string.IsNullOrEmpty(secret)) return false;
+
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_configuration["JWT_SECRET"]!);
+            var key = Encoding.ASCII.GetBytes(secret);
             
             var principal = tokenHandler.ValidateToken(token, new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(key),
-                ValidateIssuer = false,
-                ValidateAudience = false,
+                ValidateIssuer = true,
+                ValidIssuer = "SmsRazor",
+                ValidateAudience = true,
+                ValidAudience = "SmsRazorUsers",
                 // Set clockskew to zero so tokens expire exactly at token expiration time (instead of 5 mins later)
                 ClockSkew = TimeSpan.Zero
             }, out SecurityToken validatedToken);

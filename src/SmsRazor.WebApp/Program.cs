@@ -33,12 +33,16 @@ builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(optio
 builder.Services.AddAuthentication("JwtCookie")
     .AddJwtBearer("JwtCookie", options =>
     {
+        var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET")
+            ?? throw new InvalidOperationException("JWT_SECRET environment variable is not configured.");
         options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(System.Text.Encoding.ASCII.GetBytes(Environment.GetEnvironmentVariable("JWT_SECRET") ?? "this_is_a_fallback_secret_that_should_not_be_used")),
-            ValidateIssuer = false, // Simplify for this example
-            ValidateAudience = false, // Simplify for this example
+            IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(System.Text.Encoding.ASCII.GetBytes(jwtSecret)),
+            ValidateIssuer = true,
+            ValidIssuer = "SmsRazor",
+            ValidateAudience = true,
+            ValidAudience = "SmsRazorUsers",
             ClockSkew = TimeSpan.Zero
         };
     });

@@ -78,7 +78,8 @@ public class LoginModel : PageModel
     private string GenerateJwtToken(SmsRazor.BLL.DTOs.LoginResult accountInfo)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
-        var secret = _configuration["JWT_SECRET"] ?? "this_is_a_fallback_secret_that_should_not_be_used";
+        var secret = _configuration["JWT_SECRET"]
+            ?? throw new InvalidOperationException("JWT_SECRET environment variable is not configured.");
         var key = Encoding.ASCII.GetBytes(secret);
 
         var claims = new List<Claim>
@@ -98,6 +99,8 @@ public class LoginModel : PageModel
         {
             Subject = new ClaimsIdentity(claims),
             Expires = Input.RememberMe ? DateTime.UtcNow.AddDays(30) : DateTime.UtcNow.AddHours(2),
+            Issuer = "SmsRazor",
+            Audience = "SmsRazorUsers",
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
         };
 
